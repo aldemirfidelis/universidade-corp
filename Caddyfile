@@ -1,0 +1,20 @@
+# Caddy faz proxy reverso e emite SSL (Let's Encrypt) automaticamente.
+# Troque os domínios pelos seus. O e-mail é usado pelo ACME.
+{
+	email admin@example.com
+}
+
+# Frontend (Next.js)
+universidade.example.com {
+	encode gzip
+	reverse_proxy uc_web:3000
+}
+
+# API (NestJS) — inclui streaming de vídeo e uploads grandes.
+api.universidade.example.com {
+	encode gzip
+	request_body {
+		max_size 600MB
+	}
+	reverse_proxy uc_api:3333
+}

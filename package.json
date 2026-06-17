@@ -1,0 +1,38 @@
+{
+  "name": "universidade-corp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SaaS LMS multiempresa - Universidade Corporativa (treinamentos, vídeos, provas, certificados e relatórios)",
+  "scripts": {
+    "dev": "pnpm shared:build && pnpm -r --parallel --filter \"./apps/*\" dev",
+    "dev:api": "pnpm shared:build && pnpm --filter @uc/api dev",
+    "dev:web": "pnpm shared:build && pnpm --filter @uc/web dev",
+    "shared:build": "pnpm --filter @uc/shared build",
+    "shared:dev": "pnpm --filter @uc/shared dev",
+    "build": "pnpm shared:build && pnpm --filter @uc/api build && pnpm --filter @uc/web build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test",
+    "e2e:install": "playwright install chromium",
+    "db:up": "docker compose up -d postgres redis",
+    "db:down": "docker compose down",
+    "db:embedded": "node apps/api/scripts/dev-db.mjs",
+    "db:migrate": "pnpm --filter @uc/api prisma:migrate",
+    "db:generate": "pnpm --filter @uc/api prisma:generate",
+    "db:seed": "pnpm --filter @uc/api prisma:seed",
+    "db:reset": "pnpm --filter @uc/api prisma:reset",
+    "deploy:migrate": "pnpm --filter @uc/api deploy:migrate",
+    "deploy:seed": "pnpm --filter @uc/api deploy:seed",
+    "setup": "pnpm install && pnpm shared:build && pnpm db:up && pnpm db:migrate && pnpm db:seed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "prettier": "^3.3.3",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.7.0"
+}

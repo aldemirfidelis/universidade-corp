@@ -1,0 +1,47 @@
+node_modules
+.pnpm-store
+dist
+build
+.next
+out
+coverage
+.turbo
+*.tsbuildinfo
+
+# Env (NUNCA commitar credenciais!)
+.env
+.env.*
+!.env.example
+!.env.production.example
+!.env.droplet.example
+
+# Uploads locais (vídeos/materiais de treinamento)
+apps/api/uploads/
+
+# Banco local embedded-postgres (dev sem Docker)
+apps/api/.pgdata/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Editor / IDE local config
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+.claude
+.cursor
+
+# Tests
+playwright-report
+test-results
+
+# Prisma local sqlite (caso uso futuro)
+*.db
+*.sqlite
+
+# Backups do Postgres
+db-backups/
+*.dump

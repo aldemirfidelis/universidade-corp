@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: uc_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: unicorp
+      POSTGRES_PASSWORD: unicorp
+      POSTGRES_DB: unicorp
+    ports:
+      - "5432:5432"
+    volumes:
+      - uc_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unicorp -d unicorp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: uc_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - uc_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  uc_pgdata:
+  uc_redisdata:

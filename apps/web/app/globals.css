@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #2563eb;
+  --brand-dark: #0f172a;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* Botão grande e acessível para funcionários com pouca familiaridade digital. */
+.btn-grande {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-lg font-semibold shadow-sm transition active:scale-[0.99];
+}

@@ -1,0 +1,20 @@
+# Deploy por IP (sem domínio): HTTP na porta 80, origem única.
+# /api/* -> API (NestJS, prefixo /api) ; demais -> Web (Next.js).
+# Quando houver domínio, troque ":80" pelo domínio para o Caddy emitir SSL automático.
+:80 {
+	encode gzip
+
+	# Uploads/streaming de vídeo podem ser grandes.
+	request_body {
+		max_size 600MB
+	}
+
+	@api path /api/*
+	handle @api {
+		reverse_proxy uc_api:3333
+	}
+
+	handle {
+		reverse_proxy uc_web:3000
+	}
+}
