@@ -29,7 +29,8 @@ RUN pnpm install --prod --frozen-lockfile
 
 COPY --from=build /repo/apps/api/dist apps/api/dist
 COPY --from=build /repo/apps/api/prisma apps/api/prisma
-COPY --from=build /repo/apps/api/node_modules/.prisma apps/api/node_modules/.prisma
+# Gera o Prisma Client no node_modules de produção (pnpm guarda no virtual store).
+RUN pnpm --filter @uc/api exec prisma generate
 
 WORKDIR /repo/apps/api
 EXPOSE 3333
