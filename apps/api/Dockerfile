@@ -1,6 +1,7 @@
 # ---- Build ----
 FROM node:20-alpine AS build
-RUN corepack enable
+# OpenSSL é necessário para os engines do Prisma detectarem a versão correta (musl/openssl-3).
+RUN apk add --no-cache openssl && corepack enable
 WORKDIR /repo
 
 # Manifests primeiro (cache de deps)
@@ -18,7 +19,7 @@ RUN pnpm --filter @uc/shared build \
 
 # ---- Runtime ----
 FROM node:20-alpine AS runtime
-RUN corepack enable
+RUN apk add --no-cache openssl && corepack enable
 WORKDIR /repo
 ENV NODE_ENV=production
 
