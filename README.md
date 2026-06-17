@@ -57,13 +57,26 @@ concluído (ou libera a prova, se exigida) → certificado em **Meus Certificado
 
 ## Produção (Droplet)
 
+**Ambiente atual:** Droplet DigitalOcean `universidade-corp` (NYC1, Ubuntu 22.04, 2GB/1CPU),
+app publicado em **http://206.81.12.58** (origem única via Caddy na porta 80; `/api/*` → API, demais → Web).
+Stack: `docker-compose.droplet.yml` (postgres + redis + api + web + caddy). Código em `/opt/universidade-corp`.
+
+Primeiro deploy:
 ```bash
-cp .env.droplet.example .env   # ajuste domínios e segredos
+cp .env.droplet.example .env   # ajuste WEB_ORIGIN, segredos (gerados com: openssl rand -hex 32)
 docker compose -f docker-compose.droplet.yml up -d --build
+docker compose -f docker-compose.droplet.yml exec api pnpm prisma:seed   # bootstrap inicial
 ```
 
-Caddy emite SSL automaticamente (Let's Encrypt). Configure backups do Postgres
-(`pg_dump`) e monitoramento de disco — o banco roda no próprio Droplet.
+Atualizar o deploy (a partir da máquina de dev, via SSH):
+```bash
+git archive --format=tar HEAD | ssh root@206.81.12.58 "tar -x -C /opt/universidade-corp"
+ssh root@206.81.12.58 "cd /opt/universidade-corp && docker compose -f docker-compose.droplet.yml up -d --build"
+```
+
+A API roda `prisma migrate deploy` automaticamente no start. Com domínio próprio, troque `:80`
+por `seu-dominio` em `deploy/Caddyfile` para o Caddy emitir **SSL automático** (Let's Encrypt).
+Pendências de produção: backup do Postgres (`pg_dump` agendado) e monitoramento de disco.
 
 ## Fases
 
