@@ -83,6 +83,9 @@ importers:
       pdfkit:
         specifier: ^0.15.0
         version: 0.15.2
+      prisma:
+        specifier: ^5.20.0
+        version: 5.22.0
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -92,6 +95,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      tsx:
+        specifier: ^4.19.1
+        version: 4.22.4
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -135,12 +141,6 @@ importers:
       eslint:
         specifier: ^8.57.1
         version: 8.57.1
-      prisma:
-        specifier: ^5.20.0
-        version: 5.22.0
-      tsx:
-        specifier: ^4.19.1
-        version: 4.22.4
       typescript:
         specifier: ^5.5.4
         version: 5.9.3
