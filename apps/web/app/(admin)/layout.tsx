@@ -13,6 +13,7 @@ import {
   BarChart3,
   Award,
   Grid3x3,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/components/auth-context';
 import { cn } from '@/lib/utils';
@@ -21,6 +22,7 @@ const nav = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/funcionarios', label: 'Funcionários', icon: Users },
   { href: '/admin/treinamentos', label: 'Treinamentos', icon: BookOpen },
+  { href: '/admin/importacoes', label: 'Importações', icon: FileSpreadsheet },
   { href: '/admin/matriz', label: 'Matriz por Cargo', icon: Grid3x3 },
   { href: '/admin/turmas', label: 'Turmas', icon: Layers },
   { href: '/admin/certificados', label: 'Certificados', icon: Award },

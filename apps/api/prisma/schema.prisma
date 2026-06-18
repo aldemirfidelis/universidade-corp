@@ -113,23 +113,23 @@ enum NotificationType {
 // Plataforma (SaaS)
 // =====================================================
 model SubscriptionPlan {
-  id              String   @id @default(cuid())
-  name            String
-  slug            String   @unique
-  maxUsers        Int      @default(50)
-  maxStorageMb    Int      @default(10240)
-  maxCourses      Int      @default(50)
-  priceCents      Int      @default(0)
-  features        Json?
-  status          RecordStatus @default(ACTIVE)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id           String       @id @default(cuid())
+  name         String
+  slug         String       @unique
+  maxUsers     Int          @default(50)
+  maxStorageMb Int          @default(10240)
+  maxCourses   Int          @default(50)
+  priceCents   Int          @default(0)
+  features     Json?
+  status       RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  companies       Company[]
+  companies Company[]
 }
 
 model Company {
-  id              String        @id @default(cuid())
+  id              String            @id @default(cuid())
   legalName       String
   tradeName       String
   cnpj            String?
@@ -139,84 +139,86 @@ model Company {
   segment         String?
   employeeCount   Int?
   responsibleName String?
-  status          CompanyStatus @default(ACTIVE)
+  status          CompanyStatus     @default(ACTIVE)
   planId          String?
   plan            SubscriptionPlan? @relation(fields: [planId], references: [id])
-  implantedAt     DateTime      @default(now())
+  implantedAt     DateTime          @default(now())
   lastAccessAt    DateTime?
-  storageUsedMb   Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  storageUsedMb   Int               @default(0)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
   deletedAt       DateTime?
 
-  settings        CompanySettings?
+  settings CompanySettings?
 
   @@index([status])
   @@index([cnpj])
 }
 
 model CompanySettings {
-  id                                String   @id @default(cuid())
-  companyId                         String   @unique
-  company                           Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  universityName                    String   @default("Universidade Corporativa")
-  logoUrl                           String?
-  coverUrl                          String?
-  primaryColor                      String   @default("#2563eb")
-  secondaryColor                    String   @default("#0f172a")
-  requireExamByDefault              Boolean  @default(false)
-  defaultPassingScore               Int      @default(70)
-  defaultAttempts                   Int      @default(3)
-  defaultCertificateValidityMonths  Int      @default(12)
-  defaultWorkloadHours              Float    @default(4)
-  videoCompletionThreshold          Int      @default(90)
-  createdAt                         DateTime @default(now())
-  updatedAt                         DateTime @updatedAt
+  id                               String   @id @default(cuid())
+  companyId                        String   @unique
+  company                          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  universityName                   String   @default("Universidade Corporativa")
+  logoUrl                          String?
+  coverUrl                         String?
+  primaryColor                     String   @default("#2563eb")
+  secondaryColor                   String   @default("#0f172a")
+  requireExamByDefault             Boolean  @default(false)
+  defaultPassingScore              Int      @default(70)
+  defaultAttempts                  Int      @default(3)
+  defaultCertificateValidityMonths Int      @default(12)
+  defaultWorkloadHours             Float    @default(4)
+  videoCompletionThreshold         Int      @default(90)
+  createdAt                        DateTime @default(now())
+  updatedAt                        DateTime @updatedAt
 }
 
 model User {
-  id              String           @id @default(cuid())
-  companyId       String
-  name            String
-  email           String
-  cpf             String?
-  phone           String?
-  registration    String?          // matrícula
-  passwordHash    String?
-  role            UserRole         @default(EMPLOYEE)
-  accessStatus    UserAccessStatus @default(PENDING)
-  departmentId    String?          // Setor
-  department      Department?      @relation(fields: [departmentId], references: [id])
-  positionId      String?          // Cargo
-  position        Position?        @relation(fields: [positionId], references: [id])
-  area            String?          // Área (Goiasa)
-  unit            String?          // Unidade (Goiasa)
-  managerId       String?
-  manager         User?            @relation("UserManager", fields: [managerId], references: [id])
-  reports         User[]           @relation("UserManager")
-  groups          EmployeeGroup[]  @relation("EmployeeGroupMembers")
-  admissionDate   DateTime?
-  avatarUrl       String?
-  inviteToken     String?          @unique
-  inviteExpiresAt DateTime?
-  resetToken      String?          @unique
-  resetExpiresAt  DateTime?
+  id               String           @id @default(cuid())
+  companyId        String
+  name             String
+  email            String
+  cpf              String?
+  phone            String?
+  registration     String? // matrícula
+  passwordHash     String?
+  role             UserRole         @default(EMPLOYEE)
+  accessStatus     UserAccessStatus @default(PENDING)
+  departmentId     String? // Setor
+  department       Department?      @relation(fields: [departmentId], references: [id])
+  positionId       String? // Cargo
+  position         Position?        @relation(fields: [positionId], references: [id])
+  area             String? // Área (Goiasa)
+  unit             String? // Unidade (Goiasa)
+  managerId        String?
+  manager          User?            @relation("UserManager", fields: [managerId], references: [id])
+  reports          User[]           @relation("UserManager")
+  groups           EmployeeGroup[]  @relation("EmployeeGroupMembers")
+  admissionDate    DateTime?
+  avatarUrl        String?
+  inviteToken      String?          @unique
+  inviteExpiresAt  DateTime?
+  resetToken       String?          @unique
+  resetExpiresAt   DateTime?
   refreshTokenHash String?
-  lastLoginAt     DateTime?
-  createdBy       String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  deletedAt       DateTime?
+  lastLoginAt      DateTime?
+  createdBy        String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
 
-  coursesAsInstructor Course[]      @relation("CourseInstructor")
-  classesAsInstructor Class[]       @relation("ClassInstructor")
-  enrollments     Enrollment[]
-  lessonProgress  LessonProgress[]
-  courseProgress  CourseProgress[]
-  attempts        AssessmentAttempt[]
-  certificates    Certificate[]
-  classStudents   ClassStudent[]
-  notifications   Notification[]
+  coursesAsInstructor    Course[]               @relation("CourseInstructor")
+  classesAsInstructor    Class[]                @relation("ClassInstructor")
+  enrollments            Enrollment[]
+  lessonProgress         LessonProgress[]
+  courseProgress         CourseProgress[]
+  attempts               AssessmentAttempt[]
+  certificates           Certificate[]
+  classStudents          ClassStudent[]
+  notifications          Notification[]
+  apdataEmployee         ApdataEmployee?
+  apdataTrainingStatuses ApdataTrainingStatus[]
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -238,35 +240,35 @@ model Role {
 }
 
 model Permission {
-  id          String   @id @default(cuid())
-  key         String   @unique
+  id          String  @id @default(cuid())
+  key         String  @unique
   description String?
 }
 
 model Department {
-  id          String       @id @default(cuid())
-  companyId   String
-  name        String
-  parentId    String?
-  status      RecordStatus @default(ACTIVE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id        String       @id @default(cuid())
+  companyId String
+  name      String
+  parentId  String?
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
 
-  users       User[]
-  courses     Course[]
+  users   User[]
+  courses Course[]
 
   @@index([companyId])
 }
 
 model Position {
-  id          String       @id @default(cuid())
-  companyId   String
-  name        String
-  status      RecordStatus @default(ACTIVE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
+  id        String       @id @default(cuid())
+  companyId String
+  name      String
+  status    RecordStatus @default(ACTIVE)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
 
   users           User[]
   requiredCourses TrainingMatrix[]
@@ -276,13 +278,13 @@ model Position {
 
 // Matriz de Treinamentos: cursos obrigatórios por cargo (Goiasa).
 model TrainingMatrix {
-  id          String   @id @default(cuid())
-  companyId   String
-  positionId  String
-  position    Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  companyId  String
+  positionId String
+  position   Position @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 
   @@unique([positionId, courseId])
   @@index([companyId])
@@ -304,16 +306,16 @@ model EmployeeGroup {
 }
 
 model AuditLog {
-  id          String   @id @default(cuid())
-  companyId   String?
-  userId      String?
-  action      String
-  entity      String
-  entityId    String?
-  metadata    Json?
-  ip          String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  companyId String?
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([companyId])
   @@index([userId])
@@ -322,16 +324,16 @@ model AuditLog {
 }
 
 model FileUpload {
-  id          String   @id @default(cuid())
-  companyId   String
-  kind        String   // video | material | logo | cover | avatar
+  id           String    @id @default(cuid())
+  companyId    String
+  kind         String // video | material | logo | cover | avatar
   originalName String
-  storedPath  String
-  mimeType    String
-  sizeBytes   Int
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  deletedAt   DateTime?
+  storedPath   String
+  mimeType     String
+  sizeBytes    Int
+  createdBy    String?
+  createdAt    DateTime  @default(now())
+  deletedAt    DateTime?
 
   @@index([companyId])
   @@index([kind])
@@ -341,87 +343,91 @@ model FileUpload {
 // Conteúdo (Treinamentos)
 // =====================================================
 model Course {
-  id                 String         @id @default(cuid())
-  companyId          String
-  title              String
-  code               String?        // Código do treinamento (Goiasa)
-  revisionDate       DateTime?      // Data de revisão do conteúdo
-  description        String?
-  objective          String?
-  targetAudience     String?
-  category           String?
-  instructorId       String?
-  instructor         User?          @relation("CourseInstructor", fields: [instructorId], references: [id])
-  departmentId       String?
-  department         Department?    @relation(fields: [departmentId], references: [id])
-  workloadHours      Float?
-  validityMonths     Int?
-  mandatory          Boolean        @default(false)
-  modality           CourseModality @default(ONLINE)
-  requiresExam       Boolean        @default(false)
-  coverUrl           String?
-  tags               String[]       @default([])
-  prerequisiteCourseIds String[]    @default([])
-  startDate          DateTime?
-  dueDate            DateTime?
-  status             CourseStatus   @default(DRAFT)
-  publishedAt        DateTime?
-  createdBy          String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  deletedAt          DateTime?
+  id                    String         @id @default(cuid())
+  companyId             String
+  title                 String
+  externalTrainingId    String?
+  sourceSystem          String?
+  code                  String? // Código do treinamento (Goiasa)
+  revisionDate          DateTime? // Data de revisão do conteúdo
+  description           String?
+  objective             String?
+  targetAudience        String?
+  category              String?
+  instructorId          String?
+  instructor            User?          @relation("CourseInstructor", fields: [instructorId], references: [id])
+  departmentId          String?
+  department            Department?    @relation(fields: [departmentId], references: [id])
+  workloadHours         Float?
+  validityMonths        Int?
+  mandatory             Boolean        @default(false)
+  modality              CourseModality @default(ONLINE)
+  requiresExam          Boolean        @default(false)
+  coverUrl              String?
+  tags                  String[]       @default([])
+  prerequisiteCourseIds String[]       @default([])
+  startDate             DateTime?
+  dueDate               DateTime?
+  status                CourseStatus   @default(DRAFT)
+  publishedAt           DateTime?
+  createdBy             String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  deletedAt             DateTime?
 
-  modules            CourseModule[]
-  assessment         Assessment?
-  enrollments        Enrollment[]
-  courseProgress     CourseProgress[]
-  classes            Class[]
-  certificates       Certificate[]
-  pathCourses        LearningPathCourse[]
-  matrixEntries      TrainingMatrix[]
+  modules                CourseModule[]
+  assessment             Assessment?
+  enrollments            Enrollment[]
+  courseProgress         CourseProgress[]
+  classes                Class[]
+  certificates           Certificate[]
+  pathCourses            LearningPathCourse[]
+  matrixEntries          TrainingMatrix[]
+  apdataTrainingStatuses ApdataTrainingStatus[]
 
+  @@unique([companyId, externalTrainingId])
   @@index([companyId])
   @@index([companyId, status])
   @@index([companyId, mandatory])
 }
 
 model CourseModule {
-  id          String         @id @default(cuid())
+  id          String    @id @default(cuid())
   companyId   String
   courseId    String
-  course      Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course      Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   title       String
   description String?
-  order       Int            @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  lessons     CourseLesson[]
+  lessons CourseLesson[]
 
   @@index([companyId])
   @@index([courseId])
 }
 
 model CourseLesson {
-  id          String        @id @default(cuid())
+  id          String       @id @default(cuid())
   companyId   String
   moduleId    String
-  module      CourseModule  @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  module      CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   courseId    String
   title       String
   description String?
-  type        LessonType    @default(VIDEO)
-  order       Int           @default(0)
-  mandatory   Boolean       @default(true)
+  type        LessonType   @default(VIDEO)
+  order       Int          @default(0)
+  mandatory   Boolean      @default(true)
   contentText String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  video       LessonVideo?
-  materials   LessonMaterial[]
-  progress    LessonProgress[]
+  video     LessonVideo?
+  materials LessonMaterial[]
+  progress  LessonProgress[]
 
   @@index([companyId])
   @@index([moduleId])
@@ -447,15 +453,15 @@ model LessonVideo {
 }
 
 model LessonMaterial {
-  id          String       @id @default(cuid())
-  companyId   String
-  lessonId    String
-  lesson      CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  title       String
-  storedPath  String
-  mimeType    String
-  sizeBytes   Int          @default(0)
-  createdAt   DateTime     @default(now())
+  id         String       @id @default(cuid())
+  companyId  String
+  lessonId   String
+  lesson     CourseLesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title      String
+  storedPath String
+  mimeType   String
+  sizeBytes  Int          @default(0)
+  createdAt  DateTime     @default(now())
 
   @@index([companyId])
   @@index([lessonId])
@@ -472,20 +478,20 @@ model LearningPath {
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
 
-  courses     LearningPathCourse[]
+  courses LearningPathCourse[]
 
   @@index([companyId])
 }
 
 model LearningPathCourse {
-  id          String       @id @default(cuid())
-  companyId   String
-  pathId      String
-  path        LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  order       Int          @default(0)
-  required    Boolean      @default(true)
+  id        String       @id @default(cuid())
+  companyId String
+  pathId    String
+  path      LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  order     Int          @default(0)
+  required  Boolean      @default(true)
 
   @@unique([pathId, courseId])
   @@index([companyId])
@@ -495,46 +501,183 @@ model LearningPathCourse {
 // Matrícula e Progresso
 // =====================================================
 model Enrollment {
-  id          String           @id @default(cuid())
-  companyId   String
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  classId     String?
-  mandatory   Boolean          @default(false)
-  status      EnrollmentStatus @default(ACTIVE)
-  dueDate     DateTime?
-  enrolledAt  DateTime         @default(now())
-  completedAt DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id                String           @id @default(cuid())
+  companyId         String
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId          String
+  course            Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  classId           String?
+  mandatory         Boolean          @default(false)
+  status            EnrollmentStatus @default(ACTIVE)
+  dueDate           DateTime?
+  enrolledAt        DateTime         @default(now())
+  completedAt       DateTime?
+  sourceSystem      String?
+  sourceReferenceId String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@unique([userId, courseId])
   @@index([companyId])
   @@index([companyId, status])
+  @@index([companyId, sourceSystem])
   @@index([courseId])
 }
 
+// =====================================================
+// Integracao APDATA (bases importadas por planilha)
+// =====================================================
+model ApdataImportBatch {
+  id            String    @id @default(cuid())
+  companyId     String
+  type          String // EMPLOYEES | TRAINING_STATUS
+  fileName      String?
+  totalRows     Int       @default(0)
+  createdRows   Int       @default(0)
+  updatedRows   Int       @default(0)
+  unchangedRows Int       @default(0)
+  removedRows   Int       @default(0)
+  skippedRows   Int       @default(0)
+  errorRows     Json?
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  trainingStatuses ApdataTrainingStatus[]
+
+  @@index([companyId])
+  @@index([companyId, type])
+  @@index([createdAt])
+}
+
+model ApdataEmployee {
+  id                           String    @id @default(cuid())
+  companyId                    String
+  userId                       String?   @unique
+  user                         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  externalEmployeeId           String
+  name                         String
+  cpf                          String?
+  rg                           String?
+  pisPasep                     String?
+  birthDate                    DateTime?
+  gender                       String?
+  admissionDate                DateTime?
+  city                         String?
+  vacancyId                    String?
+  local                        String?
+  payroll                      String?
+  structureCode                String?
+  costCenter                   String?
+  positionExternalId           String?
+  positionName                 String?
+  areaExternalId               String?
+  areaName                     String?
+  immediateSupervisor          String?
+  managerName                  String?
+  employmentStatus             String?
+  statusStartDate              DateTime?
+  scheduleDescription          String?
+  contractType                 String?
+  phone                        String?
+  immediateSupervisorHierarchy String?
+  hierarchyId                  String?
+  hierarchy                    String?
+  hierarchyStructureCode       String?
+  parentHierarchyId            String?
+  parentHierarchyDescription   String?
+  parentHierarchyCostCenter    String?
+  sourceHash                   String
+  lastImportedAt               DateTime  @default(now())
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
+  deletedAt                    DateTime?
+
+  trainingStatuses ApdataTrainingStatus[]
+
+  @@unique([companyId, externalEmployeeId])
+  @@index([companyId])
+  @@index([companyId, areaName])
+  @@index([companyId, immediateSupervisor])
+  @@index([companyId, managerName])
+  @@index([deletedAt])
+}
+
+model ApdataTrainingStatus {
+  id                  String             @id @default(cuid())
+  companyId           String
+  importBatchId       String?
+  importBatch         ApdataImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  employeeRecordId    String?
+  employeeRecord      ApdataEmployee?    @relation(fields: [employeeRecordId], references: [id], onDelete: SetNull)
+  userId              String?
+  user                User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  courseId            String?
+  course              Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  sourceKey           String
+  externalEmployeeId  String
+  employeeName        String
+  employmentStatus    String?
+  admissionDate       DateTime?
+  positionExternalId  String?
+  positionName        String?
+  areaExternalId      String?
+  areaName            String?
+  managerName         String?
+  immediateSupervisor String?
+  payroll             String?
+  externalTrainingId  String
+  trainingTitle       String
+  eventStartAt        DateTime?
+  eventEndAt          DateTime?
+  validityDays        Int?
+  validUntil          DateTime?
+  workloadHours       Float?
+  externalStatus      String?
+  realizedCount       Float?
+  revisionDate        DateTime?
+  revisionNumber      String?
+  revisionValidity    String?
+  payrollAdjustment   String?
+  pending             Boolean            @default(false)
+  dispatchedAt        DateTime?
+  sourceHash          String
+  lastImportedAt      DateTime           @default(now())
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  deletedAt           DateTime?
+
+  @@unique([companyId, sourceKey])
+  @@index([companyId])
+  @@index([companyId, pending])
+  @@index([companyId, areaName])
+  @@index([companyId, immediateSupervisor])
+  @@index([companyId, managerName])
+  @@index([companyId, externalEmployeeId])
+  @@index([companyId, externalTrainingId])
+  @@index([deletedAt])
+}
+
 model LessonProgress {
-  id              String         @id @default(cuid())
-  companyId       String
-  userId          String
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessonId        String
-  lesson          CourseLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  courseId        String
-  watchedSeconds  Int            @default(0)
-  totalSeconds    Int            @default(0)
-  watchedPercent  Int            @default(0)
-  lastPositionSeconds Int        @default(0)
-  status          ProgressStatus @default(NOT_STARTED)
-  startedAt       DateTime?
-  completedAt     DateTime?
-  ip              String?
-  device          String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                  String         @id @default(cuid())
+  companyId           String
+  userId              String
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId            String
+  lesson              CourseLesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  courseId            String
+  watchedSeconds      Int            @default(0)
+  totalSeconds        Int            @default(0)
+  watchedPercent      Int            @default(0)
+  lastPositionSeconds Int            @default(0)
+  status              ProgressStatus @default(NOT_STARTED)
+  startedAt           DateTime?
+  completedAt         DateTime?
+  ip                  String?
+  device              String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@unique([userId, lessonId])
   @@index([companyId])
@@ -543,20 +686,20 @@ model LessonProgress {
 }
 
 model CourseProgress {
-  id              String         @id @default(cuid())
-  companyId       String
-  userId          String
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId        String
-  course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  completedLessons Int           @default(0)
-  totalLessons    Int            @default(0)
-  percent         Int            @default(0)
-  status          ProgressStatus @default(NOT_STARTED)
-  startedAt       DateTime?
-  completedAt     DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id               String         @id @default(cuid())
+  companyId        String
+  userId           String
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId         String
+  course           Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  completedLessons Int            @default(0)
+  totalLessons     Int            @default(0)
+  percent          Int            @default(0)
+  status           ProgressStatus @default(NOT_STARTED)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@unique([userId, courseId])
   @@index([companyId])
@@ -564,34 +707,34 @@ model CourseProgress {
 }
 
 model Class {
-  id           String        @id @default(cuid())
+  id           String       @id @default(cuid())
   companyId    String
   name         String
   courseId     String
-  course       Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
   instructorId String?
-  instructor   User?         @relation("ClassInstructor", fields: [instructorId], references: [id])
+  instructor   User?        @relation("ClassInstructor", fields: [instructorId], references: [id])
   dueDate      DateTime?
-  status       RecordStatus  @default(ACTIVE)
+  status       RecordStatus @default(ACTIVE)
   createdBy    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
   deletedAt    DateTime?
 
-  students     ClassStudent[]
+  students ClassStudent[]
 
   @@index([companyId])
   @@index([courseId])
 }
 
 model ClassStudent {
-  id          String   @id @default(cuid())
-  companyId   String
-  classId     String
-  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  companyId String
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
   @@unique([classId, userId])
   @@index([companyId])
@@ -601,25 +744,25 @@ model ClassStudent {
 // Avaliações (Fase 3 - schema pronto)
 // =====================================================
 model Assessment {
-  id              String   @id @default(cuid())
-  companyId       String
-  courseId        String   @unique
-  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  title           String
-  description     String?
-  passingScore    Int      @default(70)
-  maxAttempts     Int      @default(3)
-  timeLimitMin    Int?
-  shuffleQuestions Boolean @default(true)
-  shuffleOptions  Boolean  @default(true)
-  showResult      Boolean  @default(true)
-  showAnswers     Boolean  @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  deletedAt       DateTime?
+  id               String    @id @default(cuid())
+  companyId        String
+  courseId         String    @unique
+  course           Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title            String
+  description      String?
+  passingScore     Int       @default(70)
+  maxAttempts      Int       @default(3)
+  timeLimitMin     Int?
+  shuffleQuestions Boolean   @default(true)
+  shuffleOptions   Boolean   @default(true)
+  showResult       Boolean   @default(true)
+  showAnswers      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
 
-  questions       Question[]
-  attempts        AssessmentAttempt[]
+  questions Question[]
+  attempts  AssessmentAttempt[]
 
   @@index([companyId])
 }
@@ -641,40 +784,40 @@ model Question {
   updatedAt    DateTime     @updatedAt
   deletedAt    DateTime?
 
-  options      QuestionOption[]
-  answers      AssessmentAnswer[]
+  options QuestionOption[]
+  answers AssessmentAnswer[]
 
   @@index([companyId])
   @@index([assessmentId])
 }
 
 model QuestionOption {
-  id          String   @id @default(cuid())
-  companyId   String
-  questionId  String
-  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  text        String
-  isCorrect   Boolean  @default(false)
-  order       Int      @default(0)
+  id         String   @id @default(cuid())
+  companyId  String
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int      @default(0)
 
   @@index([companyId])
   @@index([questionId])
 }
 
 model AssessmentAttempt {
-  id           String        @id @default(cuid())
-  companyId    String
-  assessmentId String
-  assessment   Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
-  userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attemptNumber Int          @default(1)
-  score        Float?
-  status       AttemptStatus @default(IN_PROGRESS)
-  startedAt    DateTime      @default(now())
-  finishedAt   DateTime?
+  id            String        @id @default(cuid())
+  companyId     String
+  assessmentId  String
+  assessment    Assessment    @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attemptNumber Int           @default(1)
+  score         Float?
+  status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime      @default(now())
+  finishedAt    DateTime?
 
-  answers      AssessmentAnswer[]
+  answers AssessmentAnswer[]
 
   @@index([companyId])
   @@index([assessmentId])
@@ -682,16 +825,16 @@ model AssessmentAttempt {
 }
 
 model AssessmentAnswer {
-  id            String   @id @default(cuid())
-  companyId     String
-  attemptId     String
-  attempt       AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  questionId    String
-  question      Question @relation(fields: [questionId], references: [id])
-  selectedOptionIds String[] @default([])
-  essayText     String?
-  isCorrect     Boolean?
-  scoreAwarded  Float    @default(0)
+  id                String            @id @default(cuid())
+  companyId         String
+  attemptId         String
+  attempt           AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId        String
+  question          Question          @relation(fields: [questionId], references: [id])
+  selectedOptionIds String[]          @default([])
+  essayText         String?
+  isCorrect         Boolean?
+  scoreAwarded      Float             @default(0)
 
   @@index([companyId])
   @@index([attemptId])
@@ -701,37 +844,37 @@ model AssessmentAnswer {
 // Certificados (Fase 4 - schema pronto)
 // =====================================================
 model CertificateTemplate {
-  id          String   @id @default(cuid())
-  companyId   String
-  name        String
-  layoutJson  Json?
-  bodyText    String?
-  signatureUrl String?
+  id              String    @id @default(cuid())
+  companyId       String
+  name            String
+  layoutJson      Json?
+  bodyText        String?
+  signatureUrl    String?
   responsibleName String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  deletedAt   DateTime?
+  isDefault       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
 
   @@index([companyId])
 }
 
 model Certificate {
-  id              String            @id @default(cuid())
-  companyId       String
-  userId          String
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId        String
-  course          Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  code            String            @unique
-  workloadHours   Float?
-  issuedAt        DateTime          @default(now())
-  validUntil      DateTime?
-  status          CertificateStatus @default(VALID)
-  pdfPath         String?
-  templateId      String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id            String            @id @default(cuid())
+  companyId     String
+  userId        String
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  code          String            @unique
+  workloadHours Float?
+  issuedAt      DateTime          @default(now())
+  validUntil    DateTime?
+  status        CertificateStatus @default(VALID)
+  pdfPath       String?
+  templateId    String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   @@index([companyId])
   @@index([userId])
@@ -742,16 +885,16 @@ model Certificate {
 // Notificações
 // =====================================================
 model Notification {
-  id          String           @id @default(cuid())
-  companyId   String
-  userId      String
-  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        NotificationType @default(GENERAL)
-  title       String
-  body        String?
-  linkUrl     String?
-  readAt      DateTime?
-  createdAt   DateTime         @default(now())
+  id        String           @id @default(cuid())
+  companyId String
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType @default(GENERAL)
+  title     String
+  body      String?
+  linkUrl   String?
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
 
   @@index([companyId])
   @@index([userId])

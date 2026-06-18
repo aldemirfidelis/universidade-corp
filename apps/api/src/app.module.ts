@@ -24,6 +24,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { AiModule } from './modules/ai/ai.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ApdataModule } from './modules/apdata/apdata.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     AiModule,
     DashboardModule,
     NotificationsModule,
+    ApdataModule,
   ],
   providers: [
     // JWT global; rotas públicas marcadas com @Public().
