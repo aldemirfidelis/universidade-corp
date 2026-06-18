@@ -13,6 +13,10 @@ apps/web      Next.js 15 (App Router, Tailwind, área do aluno + admin + super a
 packages/shared  Enums e schemas Zod compartilhados (@uc/shared)
 ```
 
+## Contexto para manutencao
+
+Leia [docs/CONTEXTO-PLATAFORMA.md](docs/CONTEXTO-PLATAFORMA.md) antes de mudancas maiores. Ele reune arquitetura, modelo de dados, fluxos, APDATA, deploy, comandos e pontos de atencao para continuidade do projeto.
+
 ## Rodando localmente
 
 Pré-requisitos: Node ≥20, pnpm 9 e **PostgreSQL 16** (via Docker ou instalado localmente).

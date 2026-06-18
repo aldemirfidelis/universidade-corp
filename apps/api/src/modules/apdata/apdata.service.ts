@@ -796,6 +796,9 @@ async function readWorkbook(file: Express.Multer.File): Promise<SheetRow[]> {
   const rows: SheetRow[] = [];
 
   for (let rowIndex = 2; rowIndex <= sheet.rowCount; rowIndex += 1) {
+    if (rowIndex % 500 === 0) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
     const row = sheet.getRow(rowIndex);
     const record: SheetRow = {};
     let hasValue = false;
@@ -817,9 +820,18 @@ async function mapInChunks<T>(
   worker: (item: T) => Promise<void>,
   afterChunk?: () => Promise<void>,
 ) {
+  let lastProgressTime = Date.now();
   for (let index = 0; index < items.length; index += chunkSize) {
     await Promise.all(items.slice(index, index + chunkSize).map(worker));
-    if (afterChunk) await afterChunk();
+    await new Promise((resolve) => setImmediate(resolve));
+
+    if (afterChunk) {
+      const now = Date.now();
+      if (now - lastProgressTime > 5000 || index + chunkSize >= items.length) {
+        await afterChunk();
+        lastProgressTime = now;
+      }
+    }
   }
 }
 
