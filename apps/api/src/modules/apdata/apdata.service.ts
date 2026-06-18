@@ -123,6 +123,11 @@ export class ApdataService {
         result.errors.push(`Linha ${index + 2}: Id Contratado e Nome sao obrigatorios`);
         continue;
       }
+      const empIdNum = parseInt(employee.externalEmployeeId, 10);
+      if (isNaN(empIdNum) || empIdNum < 900000 || empIdNum > 999999) {
+        result.skipped += 1;
+        continue;
+      }
       if (externalIds.has(employee.externalEmployeeId)) {
         result.skipped += 1;
         result.errors.push(`Linha ${index + 2}: Id Contratado duplicado`);
@@ -269,6 +274,11 @@ export class ApdataService {
       if (!training.externalEmployeeId || !training.externalTrainingId || !training.trainingTitle) {
         result.skipped += 1;
         result.errors.push(`Linha ${index + 2}: Id Contratado, Id Evento e Evento sao obrigatorios`);
+        continue;
+      }
+      const empIdNum = parseInt(training.externalEmployeeId, 10);
+      if (isNaN(empIdNum) || empIdNum < 900000 || empIdNum > 999999) {
+        result.skipped += 1;
         continue;
       }
       if (sourceKeys.has(training.sourceKey)) {
