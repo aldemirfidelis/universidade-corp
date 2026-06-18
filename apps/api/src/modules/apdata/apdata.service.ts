@@ -800,9 +800,11 @@ async function readWorkbook(file: Express.Multer.File): Promise<SheetRow[]> {
       await new Promise((resolve) => setImmediate(resolve));
     }
     const row = sheet.getRow(rowIndex);
+    if (!row.hasValues) continue;
+
     const record: SheetRow = {};
     let hasValue = false;
-    for (let col = 1; col <= sheet.columnCount; col += 1) {
+    for (let col = 1; col < normalizedHeaders.length; col += 1) {
       const key = normalizedHeaders[col];
       if (!key) continue;
       const value = row.getCell(col).value;
