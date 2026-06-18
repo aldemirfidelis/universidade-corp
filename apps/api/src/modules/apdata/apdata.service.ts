@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import { createHash } from 'node:crypto';
 import {
@@ -22,7 +22,11 @@ export interface ImportResult {
   removed: number;
   skipped: number;
   errors: string[];
+  processing?: boolean;
 }
+
+const IMPORT_CONCURRENCY = 10;
+const STALE_IMPORT_MS = 12 * 60 * 60 * 1000;
 
 interface EmployeeRow {
   externalEmployeeId: string;
@@ -90,22 +94,28 @@ interface TrainingRow {
 
 @Injectable()
 export class ApdataService {
+  private readonly logger = new Logger(ApdataService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async importEmployees(companyId: string, file: Express.Multer.File, createdBy?: string) {
+    return this.startImport(companyId, file, 'EMPLOYEES', createdBy, (batchId) =>
+      this.processEmployeesImport(companyId, file, batchId, createdBy),
+    );
+  }
+
+  private async processEmployeesImport(
+    companyId: string,
+    file: Express.Multer.File,
+    batchId: string,
+    createdBy?: string,
+  ) {
     const rows = await readWorkbook(file);
-    const batch = await this.prisma.apdataImportBatch.create({
-      data: {
-        companyId,
-        type: 'EMPLOYEES',
-        fileName: file.originalname,
-        totalRows: rows.length,
-        createdBy: createdBy ?? null,
-      },
-    });
-    const result: ImportResult = emptyResult(batch.id, rows.length);
+    const result: ImportResult = emptyResult(batchId, rows.length);
+    await this.saveBatchProgress(batchId, result);
 
     const parsed: EmployeeRow[] = [];
+    const externalIds = new Set<string>();
     for (const [index, row] of rows.entries()) {
       const employee = toEmployee(row);
       if (!employee.externalEmployeeId || !employee.name) {
@@ -113,6 +123,12 @@ export class ApdataService {
         result.errors.push(`Linha ${index + 2}: Id Contratado e Nome sao obrigatorios`);
         continue;
       }
+      if (externalIds.has(employee.externalEmployeeId)) {
+        result.skipped += 1;
+        result.errors.push(`Linha ${index + 2}: Id Contratado duplicado`);
+        continue;
+      }
+      externalIds.add(employee.externalEmployeeId);
       parsed.push(employee);
     }
 
@@ -134,7 +150,7 @@ export class ApdataService {
     );
     const importedIds = new Set<string>();
 
-    for (const employee of parsed) {
+    await mapInChunks(parsed, IMPORT_CONCURRENCY, async (employee) => {
       importedIds.add(employee.externalEmployeeId);
       const sourceHash = hash(employee);
       const departmentName = employee.areaName ?? employee.payroll ?? employee.local;
@@ -204,10 +220,10 @@ export class ApdataService {
         });
         result.updated += 1;
       }
-    }
+    }, () => this.saveBatchProgress(batchId, result));
 
     const removed = existingRecords.filter((r) => !importedIds.has(r.externalEmployeeId) && !r.deletedAt);
-    for (const record of removed) {
+    await mapInChunks(removed, IMPORT_CONCURRENCY, async (record) => {
       await this.prisma.apdataEmployee.update({
         where: { id: record.id },
         data: { deletedAt: new Date(), lastImportedAt: new Date() },
@@ -223,25 +239,28 @@ export class ApdataService {
         });
       }
       result.removed += 1;
-    }
+    }, () => this.saveBatchProgress(batchId, result));
 
     await this.syncManagerLinks(companyId);
-    await this.finishBatch(batch.id, result);
+    await this.finishBatch(batchId, result);
     return result;
   }
 
   async importTrainingStatus(companyId: string, file: Express.Multer.File, createdBy?: string) {
+    return this.startImport(companyId, file, 'TRAINING_STATUS', createdBy, (batchId) =>
+      this.processTrainingStatusImport(companyId, file, batchId, createdBy),
+    );
+  }
+
+  private async processTrainingStatusImport(
+    companyId: string,
+    file: Express.Multer.File,
+    batchId: string,
+    createdBy?: string,
+  ) {
     const rows = await readWorkbook(file);
-    const batch = await this.prisma.apdataImportBatch.create({
-      data: {
-        companyId,
-        type: 'TRAINING_STATUS',
-        fileName: file.originalname,
-        totalRows: rows.length,
-        createdBy: createdBy ?? null,
-      },
-    });
-    const result: ImportResult = emptyResult(batch.id, rows.length);
+    const result: ImportResult = emptyResult(batchId, rows.length);
+    await this.saveBatchProgress(batchId, result);
 
     const parsed: TrainingRow[] = [];
     const sourceKeys = new Set<string>();
@@ -270,11 +289,11 @@ export class ApdataService {
     const statusBySourceKey = new Map(existingStatuses.map((s) => [s.sourceKey, s]));
     const importedKeys = new Set<string>();
 
-    for (const training of parsed) {
+    await mapInChunks(parsed, IMPORT_CONCURRENCY, async (training) => {
       const employee = employeeByExternalId.get(training.externalEmployeeId);
       if (!employee || employee.deletedAt || !employee.userId) {
         result.skipped += 1;
-        continue;
+        return;
       }
       importedKeys.add(training.sourceKey);
       const course = courseByExternalId.get(training.externalTrainingId);
@@ -283,7 +302,7 @@ export class ApdataService {
       const statusData = {
         ...training,
         companyId,
-        importBatchId: batch.id,
+        importBatchId: batchId,
         employeeRecordId: employee.id,
         userId: employee.userId,
         courseId: course?.id ?? null,
@@ -299,7 +318,7 @@ export class ApdataService {
         await this.prisma.apdataTrainingStatus.update({
           where: { id: existing.id },
           data: {
-            importBatchId: batch.id,
+            importBatchId: batchId,
             employeeRecordId: employee.id,
             userId: employee.userId,
             courseId: course?.id ?? null,
@@ -315,10 +334,10 @@ export class ApdataService {
         });
         result.updated += 1;
       }
-    }
+    }, () => this.saveBatchProgress(batchId, result));
 
     const removed = existingStatuses.filter((s) => !importedKeys.has(s.sourceKey) && !s.deletedAt);
-    for (const status of removed) {
+    await mapInChunks(removed, IMPORT_CONCURRENCY, async (status) => {
       await this.prisma.apdataTrainingStatus.update({
         where: { id: status.id },
         data: { deletedAt: new Date(), lastImportedAt: new Date() },
@@ -337,9 +356,9 @@ export class ApdataService {
         });
       }
       result.removed += 1;
-    }
+    }, () => this.saveBatchProgress(batchId, result));
 
-    await this.finishBatch(batch.id, result);
+    await this.finishBatch(batchId, result);
     return result;
   }
 
@@ -530,6 +549,59 @@ export class ApdataService {
     });
   }
 
+  private async startImport(
+    companyId: string,
+    file: Express.Multer.File,
+    type: 'EMPLOYEES' | 'TRAINING_STATUS',
+    createdBy: string | undefined,
+    handler: (batchId: string) => Promise<ImportResult>,
+  ) {
+    if (!file?.buffer?.length) throw new BadRequestException('Envie uma planilha Excel');
+
+    await this.closeStaleImports(companyId);
+    const running = await this.prisma.apdataImportBatch.findFirst({
+      where: { companyId, finishedAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (running) {
+      throw new BadRequestException('Aguarde a importacao APDATA em andamento finalizar antes de iniciar outra');
+    }
+
+    const batch = await this.prisma.apdataImportBatch.create({
+      data: {
+        companyId,
+        type,
+        fileName: file.originalname,
+        totalRows: 0,
+        createdBy: createdBy ?? null,
+      },
+    });
+
+    setImmediate(() => {
+      void handler(batch.id).catch(async (error) => {
+        try {
+          await this.failBatch(batch.id, error);
+        } catch (failError) {
+          const message = failError instanceof Error ? failError.message : String(failError);
+          this.logger.error(`Falha ao registrar erro da importacao APDATA ${batch.id}: ${message}`);
+        }
+      });
+    });
+
+    return { ...emptyResult(batch.id, 0), processing: true };
+  }
+
+  private async closeStaleImports(companyId: string) {
+    const staleBefore = new Date(Date.now() - STALE_IMPORT_MS);
+    await this.prisma.apdataImportBatch.updateMany({
+      where: { companyId, finishedAt: null, createdAt: { lt: staleBefore } },
+      data: {
+        finishedAt: new Date(),
+        errorRows: ['Importacao interrompida antes de finalizar. Reenvie a planilha.'],
+      },
+    });
+  }
+
   private async ensurePositions(companyId: string, names: string[]) {
     const existing = await this.prisma.position.findMany({ where: { companyId, deletedAt: null } });
     const byName = new Map(existing.map((p) => [normalizeName(p.name), p.id]));
@@ -571,7 +643,7 @@ export class ApdataService {
     const byCode = new Map(existing.filter((c) => c.code).map((c) => [c.code!, c]));
     const result = new Map<string, { id: string; status: string }>();
 
-    for (const [externalTrainingId, row] of uniqueByTraining.entries()) {
+    await mapInChunks([...uniqueByTraining.entries()], IMPORT_CONCURRENCY, async ([externalTrainingId, row]) => {
       const course = byExternalId.get(externalTrainingId) ?? byCode.get(externalTrainingId);
       const validityMonths = row.validityDays ? Math.max(1, Math.round(row.validityDays / 30)) : null;
       if (course) {
@@ -588,7 +660,7 @@ export class ApdataService {
           },
         });
         result.set(externalTrainingId, updated);
-        continue;
+        return;
       }
       const created = await this.prisma.course.create({
         data: {
@@ -608,7 +680,7 @@ export class ApdataService {
         },
       });
       result.set(externalTrainingId, created);
-    }
+    });
     return result;
   }
 
@@ -628,6 +700,7 @@ export class ApdataService {
     }
 
     const managerIds = new Set<string>();
+    const reportIdsByManagerId = new Map<string, string[]>();
     for (const record of records) {
       if (!record.userId) continue;
       const managerName = record.immediateSupervisor ?? record.managerName;
@@ -635,17 +708,37 @@ export class ApdataService {
       const managerId = userIdByName.get(normalizeName(managerName));
       if (!managerId || managerId === record.userId) continue;
       managerIds.add(managerId);
-      await this.prisma.user.update({
-        where: { id: record.userId },
+      const reportIds = reportIdsByManagerId.get(managerId);
+      if (reportIds) reportIds.push(record.userId);
+      else reportIdsByManagerId.set(managerId, [record.userId]);
+    }
+    await mapInChunks([...reportIdsByManagerId.entries()], IMPORT_CONCURRENCY, async ([managerId, userIds]) => {
+      await this.prisma.user.updateMany({
+        where: { id: { in: userIds } },
         data: { managerId },
       });
-    }
+    });
     if (managerIds.size) {
       await this.prisma.user.updateMany({
         where: { id: { in: [...managerIds] }, role: UserRole.EMPLOYEE },
         data: { role: UserRole.MANAGER },
       });
     }
+  }
+
+  private async saveBatchProgress(batchId: string, result: ImportResult) {
+    await this.prisma.apdataImportBatch.update({
+      where: { id: batchId },
+      data: {
+        totalRows: result.totalRows,
+        createdRows: result.created,
+        updatedRows: result.updated,
+        unchangedRows: result.unchanged,
+        removedRows: result.removed,
+        skippedRows: result.skipped,
+        errorRows: result.errors.slice(0, 100),
+      },
+    });
   }
 
   private async finishBatch(batchId: string, result: ImportResult) {
@@ -659,6 +752,25 @@ export class ApdataService {
         removedRows: result.removed,
         skippedRows: result.skipped,
         errorRows: result.errors.slice(0, 100),
+        finishedAt: new Date(),
+      },
+    });
+  }
+
+  private async failBatch(batchId: string, error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
+    this.logger.error(`Falha na importacao APDATA ${batchId}: ${message}`, stack);
+
+    const batch = await this.prisma.apdataImportBatch.findUnique({
+      where: { id: batchId },
+      select: { errorRows: true },
+    });
+    const currentErrors = Array.isArray(batch?.errorRows) ? batch.errorRows.map(String) : [];
+    await this.prisma.apdataImportBatch.update({
+      where: { id: batchId },
+      data: {
+        errorRows: [...currentErrors, `Falha geral: ${message}`].slice(0, 100),
         finishedAt: new Date(),
       },
     });
@@ -697,6 +809,18 @@ async function readWorkbook(file: Express.Multer.File): Promise<SheetRow[]> {
     if (hasValue) rows.push(record);
   }
   return rows;
+}
+
+async function mapInChunks<T>(
+  items: T[],
+  chunkSize: number,
+  worker: (item: T) => Promise<void>,
+  afterChunk?: () => Promise<void>,
+) {
+  for (let index = 0; index < items.length; index += chunkSize) {
+    await Promise.all(items.slice(index, index + chunkSize).map(worker));
+    if (afterChunk) await afterChunk();
+  }
 }
 
 function toEmployee(row: SheetRow): EmployeeRow {

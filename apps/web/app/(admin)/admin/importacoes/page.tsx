@@ -18,6 +18,7 @@ interface ImportResult {
   removed: number;
   skipped: number;
   errors: string[];
+  processing?: boolean;
 }
 
 interface PendingOverview {
@@ -78,7 +79,9 @@ export default function ImportacoesPage() {
   const { data } = useQuery({
     queryKey: ['apdata-pending'],
     queryFn: () => api.get<PendingOverview>('/apdata/pending'),
+    refetchInterval: 5000,
   });
+  const hasRunningImport = (data?.batches ?? []).some((batch) => !batch.finishedAt);
 
   const uploadMut = useMutation({
     mutationFn: ({ kind, file }: { kind: UploadKind; file: File }) => {
@@ -91,7 +94,11 @@ export default function ImportacoesPage() {
     },
     onSuccess: (result) => {
       setLastResult(result);
-      toast.success(`Importação concluída: ${result.created} criados, ${result.updated} atualizados.`);
+      if (result.processing) {
+        toast.success('Planilha recebida. O processamento continua em segundo plano.');
+      } else {
+        toast.success(`Importação concluída: ${result.created} criados, ${result.updated} atualizados.`);
+      }
       qc.invalidateQueries({ queryKey: ['apdata-pending'] });
       qc.invalidateQueries({ queryKey: ['employees'] });
       qc.invalidateQueries({ queryKey: ['courses'] });
@@ -119,9 +126,12 @@ export default function ImportacoesPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Importações APDATA</h1>
-        <Badge tone={data?.totals.undispatched ? 'amber' : 'green'}>
-          {data?.totals.undispatched ?? 0} pendência(s) a disparar
-        </Badge>
+        <div className="flex flex-wrap gap-2">
+          {hasRunningImport && <Badge tone="blue">Processando importação</Badge>}
+          <Badge tone={data?.totals.undispatched ? 'amber' : 'green'}>
+            {data?.totals.undispatched ?? 0} pendência(s) a disparar
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -129,17 +139,25 @@ export default function ImportacoesPage() {
           title="Superior imediato"
           icon={<FileSpreadsheet size={18} />}
           progress={progress.employees}
-          loading={uploadMut.isPending}
+          loading={uploadMut.isPending || hasRunningImport}
           onFile={(file) => uploadMut.mutate({ kind: 'employees', file })}
         />
         <UploadCard
           title="Status dos treinamentos"
           icon={<AlertTriangle size={18} />}
           progress={progress['training-status']}
-          loading={uploadMut.isPending}
+          loading={uploadMut.isPending || hasRunningImport}
           onFile={(file) => uploadMut.mutate({ kind: 'training-status', file })}
         />
       </div>
+
+      {lastResult?.processing && (
+        <Card>
+          <CardContent className="p-4 text-sm text-slate-600">
+            Importação iniciada. Acompanhe a contagem em Últimas importações.
+          </CardContent>
+        </Card>
+      )}
 
       {lastResult && (
         <Card>
@@ -195,7 +213,7 @@ export default function ImportacoesPage() {
                     <td className="px-4 py-3 text-right">
                       <Button
                         size="sm"
-                        disabled={group.undispatched === 0 || dispatchMut.isPending}
+                        disabled={group.undispatched === 0 || dispatchMut.isPending || hasRunningImport}
                         onClick={() => dispatchMut.mutate(group)}
                       >
                         <Send size={14} /> Disparar
@@ -264,7 +282,11 @@ export default function ImportacoesPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-600">{batch.totalRows} linha(s)</td>
                       <td className="px-4 py-3 text-right text-slate-500">
-                        {new Date(batch.createdAt).toLocaleDateString('pt-BR')}
+                        {batch.finishedAt ? (
+                          new Date(batch.createdAt).toLocaleDateString('pt-BR')
+                        ) : (
+                          <Badge tone="blue">Processando</Badge>
+                        )}
                       </td>
                     </tr>
                   ))}

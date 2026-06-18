@@ -18,7 +18,7 @@ import { AuthPayload } from '../auth/auth.types';
 import { ApdataService } from './apdata.service';
 
 const excelUpload = {
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 250 * 1024 * 1024 },
   fileFilter: (_req: unknown, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) => {
     const ok = /\.(xlsx|xls)$/i.test(file.originalname);
     cb(ok ? null : new BadRequestException('Envie uma planilha Excel (.xlsx ou .xls)'), ok);
