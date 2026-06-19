@@ -14,6 +14,7 @@ import {
   Award,
   Grid3x3,
   FileSpreadsheet,
+  Clock,
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/components/auth-context';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const nav = [
   { href: '/admin/treinamentos', label: 'Treinamentos', icon: BookOpen },
   { href: '/admin/importacoes', label: 'Importações', icon: FileSpreadsheet },
   { href: '/admin/matriz', label: 'Matriz por Cargo', icon: Grid3x3 },
+  { href: '/admin/pendentes', label: 'Treinamentos Pendentes', icon: Clock },
   { href: '/admin/turmas', label: 'Turmas', icon: Layers },
   { href: '/admin/certificados', label: 'Certificados', icon: Award },
   { href: '/admin/relatorios', label: 'Relatórios', icon: BarChart3 },

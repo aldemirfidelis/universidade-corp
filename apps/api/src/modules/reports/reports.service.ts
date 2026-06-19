@@ -75,6 +75,8 @@ export class ReportsService {
     return enrollments.map((e) => {
       const v = validityByUser.get(e.userId)?.get(e.courseId);
       return {
+        userId: e.userId,
+        courseId: e.courseId,
         employee: e.user.name,
         email: e.user.email,
         registration: e.user.registration ?? '',
@@ -247,5 +249,43 @@ export class ReportsService {
     res.setHeader('Content-Disposition', 'attachment; filename="relatorio-certificados.xlsx"');
     await wb.xlsx.write(res);
     res.end();
+  }
+
+  async notifyManager(companyId: string, items: Array<{ userId: string; courseId: string }>) {
+    let sentCount = 0;
+    let skippedCount = 0;
+
+    for (const item of items) {
+      const user = await this.prisma.user.findFirst({
+        where: { id: item.userId, companyId, deletedAt: null },
+        select: { name: true, managerId: true },
+      });
+      if (!user || !user.managerId) {
+        skippedCount++;
+        continue;
+      }
+      const course = await this.prisma.course.findFirst({
+        where: { id: item.courseId, companyId, deletedAt: null },
+        select: { title: true },
+      });
+      if (!course) {
+        skippedCount++;
+        continue;
+      }
+
+      await this.prisma.notification.create({
+        data: {
+          companyId,
+          userId: user.managerId,
+          type: 'GENERAL',
+          title: 'Treinamento pendente de equipe',
+          body: `O colaborador "${user.name}" está com o treinamento obrigatório "${course.title}" pendente. Por favor, auxilie e aplique o treinamento.`,
+          linkUrl: `/gestor/dashboard`,
+        },
+      });
+      sentCount++;
+    }
+
+    return { sent: sentCount, skipped: skippedCount };
   }
 }

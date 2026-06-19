@@ -1,6 +1,8 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Query,
   Res,
   UnauthorizedException,
@@ -37,6 +39,16 @@ export class ReportsController {
   @Roles(UserRole.COMPANY_ADMIN, UserRole.MANAGER)
   byDepartment(@CurrentUser() user: AuthPayload) {
     return this.service.byDepartment(effectiveCompanyId(user));
+  }
+
+  @Post('notify-manager')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.COMPANY_ADMIN)
+  notifyManager(
+    @CurrentUser() user: AuthPayload,
+    @Body() body: { items: Array<{ userId: string; courseId: string }> },
+  ) {
+    return this.service.notifyManager(effectiveCompanyId(user), body.items || []);
   }
 
   // Exportações: <a href> com token na query.

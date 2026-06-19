@@ -17,6 +17,7 @@ interface MatrixRow { positionId: string; positionName: string; courses: Course[
 export default function MatrizPage() {
   const qc = useQueryClient();
   const [positionId, setPositionId] = useState('');
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const { data: positions } = useQuery({ queryKey: ['positions'], queryFn: () => api.get<Position[]>('/companies/positions') });
@@ -48,6 +49,14 @@ export default function MatrizPage() {
     });
   }
 
+  const filteredCourses = (courses ?? []).filter((c) => {
+    const term = search.toLowerCase();
+    return (
+      c.title.toLowerCase().includes(term) ||
+      (c.code ?? '').toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="space-y-5">
       <div>
@@ -78,22 +87,31 @@ export default function MatrizPage() {
           </div>
 
           {positionId && (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {(courses ?? []).map((c) => (
-                <label
-                  key={c.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${
-                    selected.has(c.id) ? 'border-brand bg-brand/5' : 'border-slate-200'
-                  }`}
-                >
-                  <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
-                  <span className="flex-1">{c.title}</span>
-                  {c.code && <Badge>{c.code}</Badge>}
-                </label>
-              ))}
-              {(courses ?? []).length === 0 && (
-                <p className="text-sm text-slate-500">Crie treinamentos primeiro.</p>
-              )}
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Pesquisar treinamentos por título ou código..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+              />
+              <div className="grid gap-2 sm:grid-cols-2">
+                {filteredCourses.map((c) => (
+                  <label
+                    key={c.id}
+                    className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${
+                      selected.has(c.id) ? 'border-brand bg-brand/5' : 'border-slate-200'
+                    }`}
+                  >
+                    <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
+                    <span className="flex-1">{c.title}</span>
+                    {c.code && <Badge>{c.code}</Badge>}
+                  </label>
+                ))}
+                {filteredCourses.length === 0 && (
+                  <p className="text-sm text-slate-500 sm:col-span-2">Nenhum treinamento encontrado.</p>
+                )}
+              </div>
             </div>
           )}
         </CardContent>
