@@ -8,6 +8,8 @@ import {
   Award,
   AlertTriangle,
   TrendingUp,
+  Target,
+  GraduationCap,
 } from 'lucide-react';
 import {
   Bar,
@@ -25,6 +27,9 @@ import {
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/misc';
+import { StatCard } from '@/components/ui/stat-card';
+import { PageHeader } from '@/components/ui/page-header';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Overview {
   totalEmployees: number;
@@ -47,51 +52,54 @@ interface Overview {
 const PIE = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2'];
 
 export default function AdminDashboardPage() {
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get<Overview>('/dashboard/overview'),
   });
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Visão geral dos treinamentos e indicadores da empresa."
+        icon={<GraduationCap size={20} />}
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Metric icon={<Users />} label="Funcionários" value={data?.totalEmployees ?? 0} />
-        <Metric icon={<BookOpen />} label="Treinamentos publicados" value={data?.publishedCourses ?? 0} />
-        <Metric icon={<CheckCircle2 />} label="Conclusões" value={data?.completedEnrollments ?? 0} />
-        <Metric icon={<Award />} label="Certificados" value={data?.certificates ?? 0} />
-      </div>
+      {isLoading ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-[5.5rem] rounded-2xl" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard icon={<Users size={20} />} tone="brand" label="Funcionários" value={data?.totalEmployees ?? 0} />
+          <StatCard icon={<BookOpen size={20} />} tone="info" label="Treinamentos publicados" value={data?.publishedCourses ?? 0} />
+          <StatCard icon={<CheckCircle2 size={20} />} tone="success" label="Conclusões" value={data?.completedEnrollments ?? 0} />
+          <StatCard icon={<Award size={20} />} tone="warning" label="Certificados" value={data?.certificates ?? 0} />
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
+        <PercentCard label="Adesão" value={data?.adherence ?? 0} icon={<Target size={18} />} />
+        <PercentCard label="Conclusão" value={data?.completion ?? 0} icon={<CheckCircle2 size={18} />} />
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm text-slate-500">Adesão</p>
-            <p className="mt-1 text-3xl font-bold">{data?.adherence ?? 0}%</p>
-            <Progress value={data?.adherence ?? 0} className="mt-3" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-slate-500">Conclusão</p>
-            <p className="mt-1 text-3xl font-bold">{data?.completion ?? 0}%</p>
-            <Progress value={data?.completion ?? 0} className="mt-3" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-slate-500">Índice de aprovação</p>
-            <p className="mt-1 text-3xl font-bold">{data?.approvalRate ?? 0}%</p>
-            <p className="mt-2 text-xs text-slate-500">Média de notas: {data?.avgScore ?? 0}%</p>
+            <div className="flex items-center gap-2 text-muted">
+              <Award size={18} className="text-brand" />
+              <p className="text-sm">Índice de aprovação</p>
+            </div>
+            <p className="mt-2 text-3xl font-bold">{data?.approvalRate ?? 0}%</p>
+            <p className="mt-2 text-xs text-muted">Média de notas: {data?.avgScore ?? 0}%</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Controle de validade */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <Metric icon={<CheckCircle2 />} label="Treinamentos válidos" value={data?.validity?.valid ?? 0} />
-        <Metric icon={<AlertTriangle className="text-amber-500" />} label="Próximos do vencimento" value={data?.validity?.expiring ?? 0} />
-        <Metric icon={<AlertTriangle className="text-red-500" />} label="Vencidos" value={data?.validity?.expired ?? 0} />
+        <StatCard icon={<CheckCircle2 size={20} />} tone="success" label="Treinamentos válidos" value={data?.validity?.valid ?? 0} />
+        <StatCard icon={<AlertTriangle size={20} />} tone="warning" label="Próximos do vencimento" value={data?.validity?.expiring ?? 0} />
+        <StatCard icon={<AlertTriangle size={20} />} tone="danger" label="Vencidos" value={data?.validity?.expired ?? 0} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -104,10 +112,12 @@ export default function AdminDashboardPage() {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data?.completionByMonth ?? []}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="month" fontSize={12} />
-                  <YAxis allowDecimals={false} fontSize={12} />
-                  <Tooltip />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="month" fontSize={12} stroke="var(--muted-foreground)" />
+                  <YAxis allowDecimals={false} fontSize={12} stroke="var(--muted-foreground)" />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', boxShadow: '0 10px 24px -6px rgb(15 23 42 / 0.12)' }}
+                  />
                   <Bar dataKey="count" fill="var(--brand)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -135,7 +145,9 @@ export default function AdminDashboardPage() {
                     ))}
                   </Pie>
                   <Legend />
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', boxShadow: '0 10px 24px -6px rgb(15 23 42 / 0.12)' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -146,15 +158,16 @@ export default function AdminDashboardPage() {
   );
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
+function PercentCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <Card>
-      <CardContent className="flex items-center gap-3 p-5">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand/10 text-brand">{icon}</div>
-        <div>
-          <p className="text-2xl font-bold leading-none">{value}</p>
-          <p className="mt-1 text-xs text-slate-500">{label}</p>
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2 text-muted">
+          <span className="text-brand">{icon}</span>
+          <p className="text-sm">{label}</p>
         </div>
+        <p className="mt-2 text-3xl font-bold">{value}%</p>
+        <Progress value={value} className="mt-3" />
       </CardContent>
     </Card>
   );

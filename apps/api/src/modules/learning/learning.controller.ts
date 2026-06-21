@@ -16,6 +16,21 @@ export class LearningController {
     return this.service.myCourses(effectiveCompanyId(user), user.sub);
   }
 
+  @Get('catalog')
+  catalog(@CurrentUser() user: AuthPayload) {
+    return this.service.catalog(effectiveCompanyId(user), user.sub);
+  }
+
+  @Get('recommendations')
+  recommendations(@CurrentUser() user: AuthPayload) {
+    return this.service.recommendations(effectiveCompanyId(user), user.sub);
+  }
+
+  @Post('courses/:id/enroll')
+  enroll(@CurrentUser() user: AuthPayload, @Param('id') id: string) {
+    return this.service.selfEnroll(effectiveCompanyId(user), user.sub, id);
+  }
+
   @Get('dashboard')
   dashboard(@CurrentUser() user: AuthPayload) {
     return this.service.dashboard(effectiveCompanyId(user), user.sub);

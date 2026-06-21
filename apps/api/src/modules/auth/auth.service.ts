@@ -141,8 +141,14 @@ export class AuthService {
         ? {
             universityName: settings.universityName,
             logoUrl: settings.logoUrl,
+            coverUrl: settings.coverUrl,
             primaryColor: settings.primaryColor,
             secondaryColor: settings.secondaryColor,
+            heroTitle: settings.heroTitle,
+            aboutText: settings.aboutText,
+            mission: settings.missionText,
+            vision: settings.visionText,
+            guidelines: settings.guidelines,
           }
         : null,
     };

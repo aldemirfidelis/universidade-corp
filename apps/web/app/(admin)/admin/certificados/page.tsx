@@ -5,8 +5,10 @@ import { Download, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { api, apiBase } from '@/lib/api';
 import { getToken } from '@/lib/auth';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Tooltip } from '@/components/ui/tooltip';
 
 interface AdminCert {
   id: string;
@@ -27,67 +29,67 @@ export default function AdminCertificadosPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Certificados emitidos</h1>
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-400">
-                  <th className="px-4 py-3">Funcionário</th>
-                  <th className="px-4 py-3">Treinamento</th>
-                  <th className="px-4 py-3">Código</th>
-                  <th className="px-4 py-3">Emitido</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data ?? []).map((c) => (
-                  <tr key={c.id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 font-medium">{c.user.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{c.course.title}</td>
-                    <td className="px-4 py-3 font-mono text-xs">{c.code}</td>
-                    <td className="px-4 py-3 text-slate-600">{format(new Date(c.issuedAt), 'dd/MM/yyyy')}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={c.status === 'VALID' ? 'green' : 'red'}>{c.status}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-3">
-                        <a
-                          href={`${apiBase}/certificates/${c.id}/pdf?token=${token}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-brand"
-                          title="Baixar PDF"
-                        >
-                          <Download size={16} />
-                        </a>
-                        <a
-                          href={`/validar/${c.code}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-slate-500"
-                          title="Validar"
-                        >
-                          <ShieldCheck size={16} />
-                        </a>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {(data ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
-                      Nenhum certificado emitido ainda.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="Certificados emitidos"
+        subtitle="Acompanhe e baixe os certificados gerados pela plataforma."
+        icon={<ShieldCheck size={20} />}
+      />
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Funcionário</TableHead>
+            <TableHead>Treinamento</TableHead>
+            <TableHead>Código</TableHead>
+            <TableHead>Emitido</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {(data ?? []).map((c) => (
+            <TableRow key={c.id}>
+              <TableCell className="font-medium">{c.user.name}</TableCell>
+              <TableCell className="text-muted">{c.course.title}</TableCell>
+              <TableCell className="font-mono text-xs">{c.code}</TableCell>
+              <TableCell className="text-muted">{format(new Date(c.issuedAt), 'dd/MM/yyyy')}</TableCell>
+              <TableCell>
+                <Badge tone={c.status === 'VALID' ? 'green' : 'red'}>{c.status}</Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end gap-1">
+                  <Tooltip content="Baixar PDF">
+                    <a
+                      href={`${apiBase}/certificates/${c.id}/pdf?token=${token}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-brand transition hover:bg-brand/10"
+                    >
+                      <Download size={16} />
+                    </a>
+                  </Tooltip>
+                  <Tooltip content="Validar publicamente">
+                    <a
+                      href={`/validar/${c.code}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-surface-muted"
+                    >
+                      <ShieldCheck size={16} />
+                    </a>
+                  </Tooltip>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {(data ?? []).length === 0 && (
+            <TableRow>
+              <TableCell colSpan={6} className="py-8 text-center text-muted">
+                Nenhum certificado emitido ainda.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

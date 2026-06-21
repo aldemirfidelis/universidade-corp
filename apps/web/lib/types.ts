@@ -37,6 +37,7 @@ export interface LessonView {
   type: string;
   mandatory: boolean;
   contentText: string | null;
+  externalUrl: string | null;
   hasVideo: boolean;
   durationSeconds: number;
   materials: Array<{ id: string; title: string; path: string }>;

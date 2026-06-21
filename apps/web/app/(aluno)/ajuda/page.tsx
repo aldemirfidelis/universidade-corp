@@ -1,6 +1,8 @@
 'use client';
 
+import { HelpCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 
 const faqs = [
   {
@@ -17,20 +19,20 @@ const faqs = [
   },
   {
     q: 'Esqueci minha senha.',
-    a: 'Na tela de login, fale com o RH da sua empresa para reenviar o acesso, ou use "recuperar senha".',
+    a: 'Na tela de login, use "Esqueci minha senha" para receber as instruções, ou fale com o RH da sua empresa.',
   },
 ];
 
 export default function AjudaPage() {
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Ajuda</h1>
+      <PageHeader title="Ajuda" subtitle="Dúvidas frequentes sobre a plataforma." icon={<HelpCircle size={20} />} />
       <div className="grid gap-3">
         {faqs.map((f) => (
           <Card key={f.q}>
             <CardContent className="p-5">
               <p className="font-medium">{f.q}</p>
-              <p className="mt-1 text-sm text-slate-600">{f.a}</p>
+              <p className="mt-1 text-sm text-muted">{f.a}</p>
             </CardContent>
           </Card>
         ))}

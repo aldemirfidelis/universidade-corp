@@ -87,6 +87,82 @@ export class DashboardService {
     };
   }
 
+  /** Analytics avançado: funil, compliance, engajamento, por curso e por categoria. */
+  async analytics(companyId: string) {
+    const since30 = new Date(Date.now() - 30 * 24 * 3600_000);
+    const [enrollments, courses, progresses, overdue, recentProgress] = await Promise.all([
+      this.prisma.enrollment.findMany({ where: { companyId }, select: { courseId: true, status: true } }),
+      this.prisma.course.findMany({
+        where: { companyId, deletedAt: null, status: CourseStatus.PUBLISHED },
+        select: { id: true, title: true, category: true, mandatory: true },
+      }),
+      this.prisma.courseProgress.findMany({ where: { companyId }, select: { status: true } }),
+      this.prisma.enrollment.count({
+        where: { companyId, status: { not: EnrollmentStatus.COMPLETED }, dueDate: { lt: new Date() } },
+      }),
+      this.prisma.lessonProgress.findMany({
+        where: { companyId, completedAt: { gte: since30 } },
+        select: { userId: true },
+      }),
+    ]);
+
+    const courseMap = new Map(courses.map((c) => [c.id, c]));
+    const mandatorySet = new Set(courses.filter((c) => c.mandatory).map((c) => c.id));
+
+    const total = enrollments.length;
+    const completed = enrollments.filter((e) => e.status === EnrollmentStatus.COMPLETED).length;
+    const started = progresses.filter((p) => p.status !== ProgressStatus.NOT_STARTED).length;
+
+    const mandatoryEnrollments = enrollments.filter((e) => mandatorySet.has(e.courseId));
+    const mandatoryCompleted = mandatoryEnrollments.filter((e) => e.status === EnrollmentStatus.COMPLETED).length;
+
+    const courseAgg = new Map<string, { total: number; completed: number }>();
+    const catAgg = new Map<string, { total: number; completed: number }>();
+    for (const e of enrollments) {
+      const course = courseMap.get(e.courseId);
+      if (!course) continue;
+      const done = e.status === EnrollmentStatus.COMPLETED;
+
+      const c = courseAgg.get(e.courseId) ?? { total: 0, completed: 0 };
+      c.total += 1;
+      if (done) c.completed += 1;
+      courseAgg.set(e.courseId, c);
+
+      const cat = course.category ?? 'Sem categoria';
+      const k = catAgg.get(cat) ?? { total: 0, completed: 0 };
+      k.total += 1;
+      if (done) k.completed += 1;
+      catAgg.set(cat, k);
+    }
+
+    const byCourse = [...courseAgg.entries()]
+      .map(([id, v]) => ({
+        title: courseMap.get(id)?.title ?? '—',
+        total: v.total,
+        completed: v.completed,
+        rate: v.total ? Math.round((v.completed / v.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
+
+    const byCategory = [...catAgg.entries()].map(([category, v]) => ({ category, ...v }));
+    const activeLearners = new Set(recentProgress.map((p) => p.userId)).size;
+
+    return {
+      funnel: { enrolled: total, started, completed },
+      compliance: {
+        rate: mandatoryEnrollments.length ? Math.round((mandatoryCompleted / mandatoryEnrollments.length) * 100) : 0,
+        mandatoryEnrollments: mandatoryEnrollments.length,
+        mandatoryCompleted,
+      },
+      overdue,
+      activeLearners,
+      byCourse,
+      byCategory,
+      completionByMonth: await this.completionByMonth(companyId),
+    };
+  }
+
   /** Painel do gestor: somente a equipe (subordinados diretos). */
   async teamOverview(companyId: string, managerId: string) {
     const team = await this.prisma.user.findMany({

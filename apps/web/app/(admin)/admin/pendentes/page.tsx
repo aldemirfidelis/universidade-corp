@@ -8,6 +8,10 @@ import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SkeletonCards } from '@/components/ui/skeleton';
+import { Clock } from 'lucide-react';
 
 interface Enrollment {
   userId: string;
@@ -128,35 +132,27 @@ export default function PendentesPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Treinamentos Pendentes</h1>
-          <p className="text-sm text-slate-500">
-            Gerencie e notifique gestores sobre treinamentos obrigatórios atrasados ou pendentes dos colaboradores.
-          </p>
-        </div>
-        {selectedItems.size > 0 && (
-          <Button
-            onClick={handleSendSelected}
-            disabled={notifyMutation.isPending}
-            className="bg-brand text-white hover:bg-brand-dark"
-          >
-            <Send size={16} className="mr-2" />
-            Enviar {selectedItems.size} Selecionado(s) ao Gestor
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Treinamentos Pendentes"
+        subtitle="Notifique gestores sobre treinamentos obrigatórios atrasados ou pendentes."
+        icon={<Clock size={20} />}
+        actions={
+          selectedItems.size > 0 ? (
+            <Button onClick={handleSendSelected} loading={notifyMutation.isPending}>
+              <Send size={16} /> Enviar {selectedItems.size} ao gestor
+            </Button>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
-        <p className="text-sm text-slate-500">Carregando pendências...</p>
+        <SkeletonCards count={4} />
       ) : sortedGroups.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center text-slate-500">
-            <ShieldAlert size={48} className="mb-2 text-slate-300" />
-            <p className="font-semibold">Nenhuma pendência encontrada!</p>
-            <p className="text-xs">Todos os colaboradores estão em dia com a matriz de treinamentos.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<ShieldAlert size={22} />}
+          title="Nenhuma pendência encontrada!"
+          description="Todos os colaboradores estão em dia com a matriz de treinamentos."
+        />
       ) : (
         <div className="space-y-3">
           {sortedGroups.map((group) => {

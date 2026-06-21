@@ -25,6 +25,9 @@ import { AiModule } from './modules/ai/ai.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ApdataModule } from './modules/apdata/apdata.module';
+import { GamificationModule } from './modules/gamification/gamification.module';
+import { DiscussionsModule } from './modules/discussions/discussions.module';
+import { LearningPathsModule } from './modules/learning-paths/learning-paths.module';
 
 @Module({
   imports: [
@@ -51,6 +54,9 @@ import { ApdataModule } from './modules/apdata/apdata.module';
     DashboardModule,
     NotificationsModule,
     ApdataModule,
+    GamificationModule,
+    DiscussionsModule,
+    LearningPathsModule,
   ],
   providers: [
     // JWT global; rotas públicas marcadas com @Public().

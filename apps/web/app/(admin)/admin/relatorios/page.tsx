@@ -8,6 +8,9 @@ import { getToken } from '@/lib/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Badge, Progress } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { BarChart3 } from 'lucide-react';
 
 interface DeptRow { department: string; employees: number; enrollments: number; completed: number; completion: number }
 interface EnrollmentRow {
@@ -37,26 +40,30 @@ export default function RelatoriosPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Relatórios</h1>
-        <div className="flex gap-2">
-          <a href={`${apiBase}/reports/export/enrollments.xlsx?${exportQs}`}>
-            <button className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50">
-              <FileSpreadsheet size={16} /> Excel
-            </button>
-          </a>
-          <a href={`${apiBase}/reports/export/enrollments.pdf?${exportQs}`}>
-            <button className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50">
-              <FileText size={16} /> PDF
-            </button>
-          </a>
-          <a href={`${apiBase}/reports/export/certificates.xlsx?token=${token}`}>
-            <button className="inline-flex items-center gap-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50">
-              <Download size={16} /> Certificados
-            </button>
-          </a>
-        </div>
-      </div>
+      <PageHeader
+        title="Relatórios"
+        subtitle="Filtre, analise e exporte os dados de treinamento."
+        icon={<BarChart3 size={20} />}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <a href={`${apiBase}/reports/export/enrollments.xlsx?${exportQs}`}>
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium shadow-sm transition hover:bg-surface-muted">
+                <FileSpreadsheet size={16} /> Excel
+              </span>
+            </a>
+            <a href={`${apiBase}/reports/export/enrollments.pdf?${exportQs}`}>
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium shadow-sm transition hover:bg-surface-muted">
+                <FileText size={16} /> PDF
+              </span>
+            </a>
+            <a href={`${apiBase}/reports/export/certificates.xlsx?token=${token}`}>
+              <span className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-sm font-medium shadow-sm transition hover:bg-surface-muted">
+                <Download size={16} /> Certificados
+              </span>
+            </a>
+          </div>
+        }
+      />
 
       {/* Filtros */}
       <Card>
@@ -110,55 +117,51 @@ export default function RelatoriosPage() {
               <div key={d.department} className="flex items-center gap-3">
                 <span className="w-40 truncate text-sm">{d.department}</span>
                 <Progress value={d.completion} className="flex-1" />
-                <span className="w-28 text-right text-xs text-slate-500">{d.completed}/{d.enrollments} ({d.completion}%)</span>
+                <span className="w-28 text-right text-xs text-muted">{d.completed}/{d.enrollments} ({d.completion}%)</span>
               </div>
             ))}
-            {(byDept ?? []).length === 0 && <p className="text-sm text-slate-500">Sem dados.</p>}
+            {(byDept ?? []).length === 0 && <p className="text-sm text-muted">Sem dados.</p>}
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-400">
-                  <th className="px-4 py-3">Funcionário</th>
-                  <th className="px-4 py-3">Cargo</th>
-                  <th className="px-4 py-3">Setor</th>
-                  <th className="px-4 py-3">Treinamento</th>
-                  <th className="px-4 py-3">%</th>
-                  <th className="px-4 py-3">Vencimento</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(rows ?? []).map((r, i) => (
-                  <tr key={i} className="border-b border-slate-100">
-                    <td className="px-4 py-3 font-medium">{r.employee}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.position}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.department}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.course}</td>
-                    <td className="px-4 py-3">{r.progress}%</td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {r.validUntil ? new Date(r.validUntil).toLocaleDateString('pt-BR') : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge tone={r.overdue ? 'red' : statusTone[r.status] ?? 'slate'}>
-                        {r.overdue ? 'Vencido' : r.status}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-                {(rows ?? []).length === 0 && (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Sem registros.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Funcionário</TableHead>
+            <TableHead>Cargo</TableHead>
+            <TableHead>Setor</TableHead>
+            <TableHead>Treinamento</TableHead>
+            <TableHead>%</TableHead>
+            <TableHead>Vencimento</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {(rows ?? []).map((r, i) => (
+            <TableRow key={i}>
+              <TableCell className="font-medium">{r.employee}</TableCell>
+              <TableCell className="text-muted">{r.position}</TableCell>
+              <TableCell className="text-muted">{r.department}</TableCell>
+              <TableCell className="text-muted">{r.course}</TableCell>
+              <TableCell>{r.progress}%</TableCell>
+              <TableCell className="text-muted">
+                {r.validUntil ? new Date(r.validUntil).toLocaleDateString('pt-BR') : '—'}
+              </TableCell>
+              <TableCell>
+                <Badge tone={r.overdue ? 'red' : statusTone[r.status] ?? 'slate'}>
+                  {r.overdue ? 'Vencido' : r.status}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+          {(rows ?? []).length === 0 && (
+            <TableRow>
+              <TableCell colSpan={7} className="py-8 text-center text-muted">Sem registros.</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

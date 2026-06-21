@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { EnrollmentStatus, NotificationType } from '@uc/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { certificateCode } from '../../common/crypto';
+import { GamificationService } from '../gamification/gamification.service';
 
 /**
  * Conclusão de curso e emissão de certificado.
@@ -9,7 +10,10 @@ import { certificateCode } from '../../common/crypto';
  */
 @Injectable()
 export class CompletionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gamification: GamificationService,
+  ) {}
 
   /** Marca matrícula concluída + gera certificado (idempotente). */
   async completeCourse(companyId: string, userId: string, courseId: string) {
@@ -68,6 +72,13 @@ export class CompletionService {
         body: `Parabéns! Você concluiu "${course.title}".`,
       },
     });
+
+    // Gamificação: pontos de conclusão + badges (não bloqueia o fluxo principal).
+    try {
+      await this.gamification.awardCourseCompleted(companyId, userId, courseId);
+    } catch {
+      /* gamificação é best-effort */
+    }
     return cert;
   }
 }

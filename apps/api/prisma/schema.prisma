@@ -74,6 +74,7 @@ enum LessonType {
   VIDEO
   TEXT
   MATERIAL
+  EXTERNAL
 }
 
 enum QuestionType {
@@ -164,6 +165,12 @@ model CompanySettings {
   coverUrl                         String?
   primaryColor                     String   @default("#2563eb")
   secondaryColor                   String   @default("#0f172a")
+  // Conteúdo white-label da Academia (configurável por empresa).
+  heroTitle                        String?
+  aboutText                        String?
+  missionText                      String?
+  visionText                       String?
+  guidelines                       String[] @default([])
   requireExamByDefault             Boolean  @default(false)
   defaultPassingScore              Int      @default(70)
   defaultAttempts                  Int      @default(3)
@@ -219,6 +226,10 @@ model User {
   notifications          Notification[]
   apdataEmployee         ApdataEmployee?
   apdataTrainingStatuses ApdataTrainingStatus[]
+  gamification           GamificationProfile?
+  pointEvents            PointEvent[]
+  badges                 UserBadge[]
+  lessonComments         LessonComment[]
 
   @@unique([companyId, email])
   @@index([companyId])
@@ -421,6 +432,7 @@ model CourseLesson {
   order       Int          @default(0)
   mandatory   Boolean      @default(true)
   contentText String?
+  externalUrl String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   deletedAt   DateTime?
@@ -899,4 +911,74 @@ model Notification {
   @@index([companyId])
   @@index([userId])
   @@index([readAt])
+}
+
+// =====================================================
+// Gamificação (pontos/XP, níveis, streaks, badges, ranking)
+// =====================================================
+model GamificationProfile {
+  id               String    @id @default(cuid())
+  companyId        String
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  points           Int       @default(0)
+  currentStreak    Int       @default(0)
+  longestStreak    Int       @default(0)
+  lastActivityDate DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([companyId, points])
+}
+
+/// Histórico de pontos (auditoria + idempotência por refId).
+model PointEvent {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  points    Int
+  refId     String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId, userId])
+  @@index([userId, type, refId])
+}
+
+/// Badges conquistadas (código definido no catálogo da aplicação).
+model UserBadge {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  awardedAt DateTime @default(now())
+
+  @@unique([userId, code])
+  @@index([companyId, userId])
+}
+
+// =====================================================
+// Aprendizagem social (perguntas e respostas por aula)
+// =====================================================
+model LessonComment {
+  id        String          @id @default(cuid())
+  companyId String
+  courseId  String
+  lessonId  String
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    LessonComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   LessonComment[] @relation("CommentReplies")
+  body      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  deletedAt DateTime?
+
+  @@index([companyId, lessonId])
+  @@index([lessonId, parentId])
+  @@index([userId])
 }

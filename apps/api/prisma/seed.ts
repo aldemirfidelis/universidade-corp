@@ -43,6 +43,25 @@ async function main() {
             secondaryColor: '#064e3b',
             videoCompletionThreshold: 90,
             defaultWorkloadHours: 4,
+            heroTitle: 'Conhecimento que transforma, segurança que protege e qualidade que gera resultados.',
+            aboutText:
+              'Este é o espaço dedicado ao seu desenvolvimento profissional. Aqui você terá acesso aos treinamentos, conteúdos e programas que fortalecem nossas competências, promovem a segurança, garantem a qualidade dos processos e contribuem para a construção de resultados cada vez melhores.',
+            missionText:
+              'Produzir e fornecer energia renovável ao menor custo, com excelência no serviço e em harmonia com a comunidade e o meio ambiente.',
+            visionText:
+              'Ser referência no setor como empresa de elevado retorno ao acionista aliado à responsabilidade social.',
+            guidelines: [
+              'Mitigar riscos relacionados à Saúde e Segurança do Trabalho;',
+              'Proteger o meio ambiente através de ações que previnam a poluição, preservem a fauna, a flora e os recursos naturais;',
+              'Controlar os perigos relacionados à Qualidade e Segurança de Alimentos, atendendo aos requisitos legais, de Clientes e do Sistema de Gestão;',
+              'Assegurar a fidelidade e satisfação dos Clientes;',
+              'Garantir a eficácia dos processos internos assegurando a consulta e participação dos Colaboradores;',
+              'Incentivar a evolução contínua da competência dos Colaboradores;',
+              'Garantir que as vagas sejam preenchidas, preferencialmente, através de seleção interna;',
+              'Promover a diversidade, proporcionar a equidade e assegurar a inclusão;',
+              'Promover a avaliação, comunicação e atendimento dos requisitos do Sistema Integrado de Gestão;',
+              'Assegurar a comunicação com a comunidade.',
+            ],
           },
         },
       },

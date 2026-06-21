@@ -132,6 +132,7 @@ export class CoursesService {
         order: dto.order,
         mandatory: dto.mandatory,
         contentText: dto.contentText ?? null,
+        externalUrl: dto.externalUrl ?? null,
       },
     });
   }

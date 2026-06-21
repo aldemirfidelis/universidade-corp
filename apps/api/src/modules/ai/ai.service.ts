@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 import { GeminiService } from './gemini.service';
 
 export interface OutlineModule {
@@ -18,7 +19,57 @@ export interface GeneratedQuestion {
 
 @Injectable()
 export class AiService {
-  constructor(private readonly gemini: GeminiService) {}
+  constructor(
+    private readonly gemini: GeminiService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /** Tutor de dúvidas sobre o conteúdo de um treinamento (com fallback offline). */
+  async tutor(companyId: string, courseId: string, question: string): Promise<{ answer: string; ai: boolean }> {
+    const q = (question ?? '').trim();
+    if (!q) throw new BadRequestException('Escreva sua dúvida.');
+    if (q.length > 500) throw new BadRequestException('Pergunta muito longa (máx. 500 caracteres).');
+
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, companyId, deletedAt: null },
+      select: {
+        title: true,
+        description: true,
+        objective: true,
+        modules: {
+          where: { deletedAt: null },
+          orderBy: { order: 'asc' },
+          select: {
+            title: true,
+            lessons: {
+              where: { deletedAt: null },
+              orderBy: { order: 'asc' },
+              select: { title: true, contentText: true },
+            },
+          },
+        },
+      },
+    });
+    if (!course) throw new NotFoundException('Treinamento não encontrado');
+
+    if (!this.gemini.enabled) return { answer: tutorFallback(), ai: false };
+
+    const prompt = `Você é um tutor do treinamento corporativo "${course.title}". Responda à dúvida do colaborador
+de forma clara, objetiva e acolhedora, em português do Brasil, baseando-se SOMENTE no conteúdo abaixo.
+Se a pergunta fugir do tema do treinamento, oriente gentilmente a focar no conteúdo do curso.
+
+CONTEÚDO DO TREINAMENTO:
+${buildTutorContext(course)}
+
+PERGUNTA DO COLABORADOR: ${q}`;
+
+    try {
+      const text = await this.gemini.generateText(prompt);
+      return { answer: text.trim(), ai: true };
+    } catch {
+      return { answer: tutorFallback(), ai: false };
+    }
+  }
 
   async courseOutline(topic: string, audience?: string): Promise<CourseOutline> {
     if (!this.gemini.enabled) return stubOutline(topic);
@@ -62,6 +113,28 @@ Formato JSON: [ { "statement": string, "options": [ { "text": string, "isCorrect
       return { text: `Certificamos que {nome_funcionario} concluiu o treinamento "${courseTitle}".` };
     }
   }
+}
+
+// ---- Tutor: contexto + fallback ----
+function buildTutorContext(course: {
+  description: string | null;
+  objective: string | null;
+  modules: Array<{ title: string; lessons: Array<{ title: string; contentText: string | null }> }>;
+}): string {
+  const lines: string[] = [];
+  if (course.description) lines.push(`Descrição: ${course.description}`);
+  if (course.objective) lines.push(`Objetivo: ${course.objective}`);
+  for (const m of course.modules) {
+    lines.push(`\nMódulo: ${m.title}`);
+    for (const l of m.lessons) {
+      lines.push(`- ${l.title}${l.contentText ? `: ${l.contentText.slice(0, 300)}` : ''}`);
+    }
+  }
+  return lines.join('\n').slice(0, 6000);
+}
+
+function tutorFallback(): string {
+  return 'O tutor automático está indisponível no momento. Revise os materiais desta aula e, se a dúvida continuar, use a seção de comentários para perguntar ao instrutor.';
 }
 
 // ---- Stubs offline (quando não há GEMINI_API_KEY) ----

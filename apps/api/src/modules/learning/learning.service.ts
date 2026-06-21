@@ -10,6 +10,7 @@ import { env } from '../../common/env';
 import { CompletionService } from '../completion/completion.service';
 import { MatrixService } from '../matrix/matrix.service';
 import { ValidityService } from '../validity/validity.service';
+import { GamificationService } from '../gamification/gamification.service';
 
 @Injectable()
 export class LearningService {
@@ -18,6 +19,7 @@ export class LearningService {
     private readonly completion: CompletionService,
     private readonly matrix: MatrixService,
     private readonly validity: ValidityService,
+    private readonly gamification: GamificationService,
   ) {}
 
   /** "Meus Treinamentos": matrículas + progresso + validade. */
@@ -138,6 +140,7 @@ export class LearningService {
           type: l.type,
           mandatory: l.mandatory,
           contentText: l.contentText,
+          externalUrl: l.externalUrl,
           hasVideo: !!l.video,
           durationSeconds: l.video?.durationSeconds ?? 0,
           materials: l.materials.map((mat) => ({ id: mat.id, title: mat.title, path: mat.storedPath })),
@@ -218,8 +221,125 @@ export class LearningService {
       },
     });
 
+    // Gamificação: pontua quando a aula é concluída pela 1ª vez (best-effort).
+    if (status === ProgressStatus.COMPLETED && !alreadyCompleted) {
+      try {
+        await this.gamification.awardLessonCompleted(companyId, userId, lessonId);
+      } catch {
+        /* gamificação é best-effort */
+      }
+    }
+
     const courseState = await this.recalcCourse(companyId, userId, lesson.courseId);
     return { lessonStatus: status, watchedPercent: pct, ...courseState };
+  }
+
+  /** Catálogo: treinamentos publicados da empresa, com status de matrícula do usuário. */
+  async catalog(companyId: string, userId: string) {
+    const courses = await this.prisma.course.findMany({
+      where: { companyId, deletedAt: null, status: CourseStatus.PUBLISHED },
+      select: {
+        id: true,
+        title: true,
+        code: true,
+        coverUrl: true,
+        category: true,
+        description: true,
+        workloadHours: true,
+        mandatory: true,
+        requiresExam: true,
+      },
+      orderBy: { title: 'asc' },
+    });
+
+    const [enrollments, progresses] = await Promise.all([
+      this.prisma.enrollment.findMany({ where: { companyId, userId }, select: { courseId: true } }),
+      this.prisma.courseProgress.findMany({ where: { companyId, userId }, select: { courseId: true, percent: true, status: true } }),
+    ]);
+    const enrolledSet = new Set(enrollments.map((e) => e.courseId));
+    const progressByCourse = new Map(progresses.map((p) => [p.courseId, p]));
+
+    return courses.map((c) => ({
+      ...c,
+      enrolled: enrolledSet.has(c.id),
+      progress: progressByCourse.get(c.id)?.percent ?? 0,
+      progressStatus: progressByCourse.get(c.id)?.status ?? ProgressStatus.NOT_STARTED,
+    }));
+  }
+
+  /** Recomendações personalizadas (cargo/matriz, obrigatórios, afinidade de categoria). */
+  async recommendations(companyId: string, userId: string) {
+    const me = await this.prisma.user.findUnique({ where: { id: userId }, select: { positionId: true } });
+
+    const [enrollments, matrix, completed] = await Promise.all([
+      this.prisma.enrollment.findMany({ where: { companyId, userId }, select: { courseId: true } }),
+      me?.positionId
+        ? this.prisma.trainingMatrix.findMany({ where: { companyId, positionId: me.positionId }, select: { courseId: true } })
+        : Promise.resolve([] as { courseId: string }[]),
+      this.prisma.courseProgress.findMany({
+        where: { companyId, userId, status: ProgressStatus.COMPLETED },
+        select: { courseId: true },
+      }),
+    ]);
+
+    const enrolledIds = enrollments.map((e) => e.courseId);
+    const matrixIds = new Set(matrix.map((m) => m.courseId));
+    const completedIds = completed.map((c) => c.courseId);
+    const completedCourses = completedIds.length
+      ? await this.prisma.course.findMany({ where: { id: { in: completedIds } }, select: { category: true } })
+      : [];
+    const likedCategories = new Set(completedCourses.map((c) => c.category).filter(Boolean) as string[]);
+
+    const candidates = await this.prisma.course.findMany({
+      where: { companyId, deletedAt: null, status: CourseStatus.PUBLISHED, id: { notIn: enrolledIds } },
+      select: {
+        id: true,
+        title: true,
+        code: true,
+        coverUrl: true,
+        category: true,
+        workloadHours: true,
+        mandatory: true,
+        requiresExam: true,
+      },
+    });
+
+    const scored = candidates.map((c) => {
+      let score = 0;
+      let reason = 'Disponível no catálogo';
+      if (matrixIds.has(c.id)) {
+        score += 5;
+        reason = 'Recomendado para o seu cargo';
+      }
+      if (c.mandatory) {
+        score += 3;
+        if (score === 3) reason = 'Obrigatório';
+      }
+      if (c.category && likedCategories.has(c.category)) {
+        score += 2;
+        if (!matrixIds.has(c.id) && !c.mandatory) reason = 'Combina com seus interesses';
+      }
+      return { course: c, score, reason };
+    });
+
+    return scored
+      .sort((a, b) => b.score - a.score || a.course.title.localeCompare(b.course.title))
+      .slice(0, 6)
+      .map((s) => ({ ...s.course, reason: s.reason }));
+  }
+
+  /** Auto-inscrição do colaborador em um treinamento publicado. */
+  async selfEnroll(companyId: string, userId: string, courseId: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, companyId, deletedAt: null, status: CourseStatus.PUBLISHED },
+    });
+    if (!course) throw new NotFoundException('Treinamento não encontrado ou não publicado');
+    await this.prisma.enrollment.upsert({
+      where: { userId_courseId: { userId, courseId } },
+      create: { companyId, userId, courseId, mandatory: course.mandatory },
+      update: {},
+    });
+    return { ok: true };
   }
 
   async myCertificates(companyId: string, userId: string) {

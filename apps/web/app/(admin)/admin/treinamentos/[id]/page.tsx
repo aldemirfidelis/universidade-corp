@@ -14,6 +14,8 @@ import {
   Send,
   Users,
   FileQuestion,
+  Sparkles,
+  Link2 as LinkIcon,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -69,6 +71,33 @@ export default function CourseEditorPage({ params }: { params: Promise<{ id: str
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const genStructure = useMutation({
+    mutationFn: async () => {
+      const outline = await api.post<{ modules: Array<{ title: string; lessons: string[] }> }>(
+        '/ai/course-outline',
+        { topic: course?.title },
+      );
+      let order = course?.modules.length ?? 0;
+      for (const m of outline.modules ?? []) {
+        const mod = await api.post<{ id: string }>(`/courses/${id}/modules`, { title: m.title, order: order++ });
+        let lessonOrder = 0;
+        for (const lessonTitle of m.lessons ?? []) {
+          await api.post(`/courses/modules/${mod.id}/lessons`, {
+            title: lessonTitle,
+            type: 'VIDEO',
+            order: lessonOrder++,
+            mandatory: true,
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success('Estrutura gerada com IA! Revise e anexe os vídeos.');
+      invalidate();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   if (!course) return <p className="text-slate-500">Carregando...</p>;
 
   const lessonCount = course.modules.reduce((s, m) => s + m.lessons.length, 0);
@@ -107,7 +136,18 @@ export default function CourseEditorPage({ params }: { params: Promise<{ id: str
 
       <Card>
         <CardContent className="space-y-4 p-5">
-          <h2 className="font-semibold">Conteúdo</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">Conteúdo</h2>
+            <Button variant="subtle" size="sm" onClick={() => genStructure.mutate()} loading={genStructure.isPending}>
+              <Sparkles size={15} /> Gerar estrutura com IA
+            </Button>
+          </div>
+
+          {course.modules.length === 0 && !genStructure.isPending && (
+            <p className="rounded-xl border border-dashed border-line bg-surface-muted/40 px-4 py-6 text-center text-sm text-muted">
+              Comece adicionando módulos e aulas — ou gere uma estrutura inicial com IA e ajuste como quiser.
+            </p>
+          )}
 
           {course.modules.map((m) => (
             <ModuleBlock key={m.id} module={m} onChange={invalidate} />
@@ -145,6 +185,8 @@ function ModuleBlock({
   onChange: () => void;
 }) {
   const [lessonTitle, setLessonTitle] = useState('');
+  const [extOpen, setExtOpen] = useState(false);
+  const [ext, setExt] = useState({ title: '', url: '' });
 
   const addLesson = useMutation({
     mutationFn: () =>
@@ -156,6 +198,23 @@ function ModuleBlock({
       }),
     onSuccess: () => {
       setLessonTitle('');
+      onChange();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
+  const addExternal = useMutation({
+    mutationFn: () =>
+      api.post(`/courses/modules/${module.id}/lessons`, {
+        title: ext.title,
+        type: 'EXTERNAL',
+        order: module.lessons.length,
+        mandatory: true,
+        externalUrl: ext.url,
+      }),
+    onSuccess: () => {
+      setExt({ title: '', url: '' });
+      setExtOpen(false);
       onChange();
     },
     onError: (e) => toast.error((e as Error).message),
@@ -196,6 +255,33 @@ function ModuleBlock({
         >
           <Plus size={14} /> Aula
         </Button>
+      </div>
+
+      <div className="mt-2">
+        {!extOpen ? (
+          <button onClick={() => setExtOpen(true)} className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline">
+            <LinkIcon size={13} /> Adicionar conteúdo externo (link / SCORM hospedado)
+          </button>
+        ) : (
+          <div className="space-y-2 rounded-xl border border-dashed border-line bg-surface-muted/40 p-3">
+            <Input value={ext.title} onChange={(e) => setExt({ ...ext, title: e.target.value })} placeholder="Título do conteúdo" className="h-9" />
+            <Input value={ext.url} onChange={(e) => setExt({ ...ext, url: e.target.value })} placeholder="https://... (página, vídeo incorporável ou pacote SCORM hospedado)" className="h-9" />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="h-9"
+                onClick={() => ext.title && ext.url && addExternal.mutate()}
+                loading={addExternal.isPending}
+                disabled={!ext.title || !ext.url}
+              >
+                <Plus size={14} /> Adicionar
+              </Button>
+              <Button size="sm" variant="ghost" className="h-9" onClick={() => setExtOpen(false)}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

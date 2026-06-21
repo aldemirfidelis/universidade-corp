@@ -11,6 +11,13 @@ interface Branding {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  // Conteúdo white-label opcional (populado via CompanySettings na Fase 2).
+  coverUrl?: string | null;
+  heroTitle?: string | null;
+  aboutText?: string | null;
+  mission?: string | null;
+  vision?: string | null;
+  guidelines?: string[] | null;
 }
 
 interface Me {

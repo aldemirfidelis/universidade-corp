@@ -10,6 +10,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Badge } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { SkeletonCards } from '@/components/ui/skeleton';
 
 interface ClassRow {
   id: string;
@@ -32,38 +35,56 @@ function TurmasInner() {
   const preselect = useSearchParams().get('courseId') ?? '';
   const [show, setShow] = useState(!!preselect);
 
-  const { data: classes } = useQuery({ queryKey: ['classes'], queryFn: () => api.get<ClassRow[]>('/classes') });
+  const { data: classes, isLoading } = useQuery({ queryKey: ['classes'], queryFn: () => api.get<ClassRow[]>('/classes') });
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Turmas</h1>
-        <Button onClick={() => setShow((s) => !s)}>
-          <Plus size={16} /> Nova turma
-        </Button>
-      </div>
+      <PageHeader
+        title="Turmas"
+        subtitle="Agrupe colaboradores e atribua treinamentos em lote."
+        icon={<Layers size={20} />}
+        actions={
+          <Button onClick={() => setShow((s) => !s)}>
+            <Plus size={16} /> Nova turma
+          </Button>
+        }
+      />
 
       {show && <NewClassForm preselect={preselect} onDone={() => { setShow(false); qc.invalidateQueries({ queryKey: ['classes'] }); }} />}
 
-      <div className="grid gap-3">
-        {(classes ?? []).map((c) => (
-          <Card key={c.id}>
-            <CardContent className="flex items-center justify-between gap-4 p-4">
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                  <Layers size={18} />
-                </span>
-                <div>
-                  <p className="font-medium">{c.name}</p>
-                  <p className="text-xs text-slate-500">{c.course.title}</p>
+      {isLoading ? (
+        <SkeletonCards count={3} />
+      ) : (classes ?? []).length === 0 ? (
+        <EmptyState
+          icon={<Layers size={22} />}
+          title="Nenhuma turma criada"
+          description="Crie uma turma para inscrever vários colaboradores de uma vez."
+          action={
+            <Button onClick={() => setShow(true)}>
+              <Plus size={16} /> Nova turma
+            </Button>
+          }
+        />
+      ) : (
+        <div className="grid gap-3">
+          {(classes ?? []).map((c) => (
+            <Card key={c.id} interactive>
+              <CardContent className="flex items-center justify-between gap-4 p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                    <Layers size={18} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{c.name}</p>
+                    <p className="truncate text-xs text-muted">{c.course.title}</p>
+                  </div>
                 </div>
-              </div>
-              <Badge tone="blue">{c._count.students} aluno(s)</Badge>
-            </CardContent>
-          </Card>
-        ))}
-        {(classes ?? []).length === 0 && <p className="text-sm text-slate-500">Nenhuma turma criada.</p>}
-      </div>
+                <Badge tone="blue">{c._count.students} aluno(s)</Badge>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -157,7 +178,7 @@ function NewClassForm({ preselect, onDone }: { preselect: string; onDone: () => 
 
 export default function TurmasPage() {
   return (
-    <Suspense fallback={<p className="text-slate-500">Carregando...</p>}>
+    <Suspense fallback={<SkeletonCards count={3} />}>
       <TurmasInner />
     </Suspense>
   );

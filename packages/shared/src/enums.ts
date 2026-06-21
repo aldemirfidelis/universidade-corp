@@ -67,6 +67,7 @@ export const LessonType = {
   VIDEO: 'VIDEO',
   TEXT: 'TEXT',
   MATERIAL: 'MATERIAL',
+  EXTERNAL: 'EXTERNAL',
 } as const;
 export type LessonType = (typeof LessonType)[keyof typeof LessonType];
 

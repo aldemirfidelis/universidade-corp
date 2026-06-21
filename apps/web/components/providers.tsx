@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { PwaRegister } from './pwa-register';
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
-      {children}
+      <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
       <Toaster richColors position="top-right" />
       <PwaRegister />
     </QueryClientProvider>

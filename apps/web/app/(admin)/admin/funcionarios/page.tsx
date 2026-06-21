@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input, Label, Select } from '@/components/ui/input';
 import { Badge } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 interface Employee {
   id: string;
@@ -58,64 +60,62 @@ export default function FuncionariosPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Funcionários</h1>
-        <div className="flex gap-2">
-          <input ref={fileRef} type="file" accept=".csv" hidden onChange={onPickFile} />
-          <Button variant="outline" onClick={() => fileRef.current?.click()}>
-            <Upload size={16} /> Importar CSV
-          </Button>
-          <Button onClick={() => setShowForm((s) => !s)}>
-            <UserPlus size={16} /> Novo funcionário
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Funcionários"
+        subtitle="Gerencie colaboradores, convites e perfis de acesso."
+        icon={<UserPlus size={20} />}
+        actions={
+          <>
+            <input ref={fileRef} type="file" accept=".csv" hidden onChange={onPickFile} />
+            <Button variant="outline" onClick={() => fileRef.current?.click()} loading={importMut.isPending}>
+              <Upload size={16} /> Importar CSV
+            </Button>
+            <Button onClick={() => setShowForm((s) => !s)}>
+              <UserPlus size={16} /> Novo funcionário
+            </Button>
+          </>
+        }
+      />
 
-      <p className="text-xs text-slate-500">
-        CSV com colunas: <code>nome, email, cpf, matricula, departamento, cargo</code>.
+      <p className="text-xs text-muted">
+        CSV com colunas: <code className="rounded bg-surface-muted px-1 py-0.5">nome, email, cpf, matricula, departamento, cargo</code>.
       </p>
 
       {showForm && <NewEmployeeForm onDone={() => setShowForm(false)} />}
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-400">
-                  <th className="px-4 py-3">Nome</th>
-                  <th className="px-4 py-3">E-mail</th>
-                  <th className="px-4 py-3">Setor</th>
-                  <th className="px-4 py-3">Perfil</th>
-                  <th className="px-4 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data ?? []).map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100">
-                    <td className="px-4 py-3 font-medium">{u.name}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{u.department?.name ?? '—'}</td>
-                    <td className="px-4 py-3">{ROLE_LABELS[u.role]}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={u.accessStatus === 'ACTIVE' ? 'green' : u.accessStatus === 'PENDING' ? 'amber' : 'red'}>
-                        {u.accessStatus === 'PENDING' ? 'Convite pendente' : u.accessStatus}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-                {(data ?? []).length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
-                      Nenhum funcionário cadastrado.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>E-mail</TableHead>
+            <TableHead>Setor</TableHead>
+            <TableHead>Perfil</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {(data ?? []).map((u) => (
+            <TableRow key={u.id}>
+              <TableCell className="font-medium">{u.name}</TableCell>
+              <TableCell className="text-muted">{u.email}</TableCell>
+              <TableCell className="text-muted">{u.department?.name ?? '—'}</TableCell>
+              <TableCell>{ROLE_LABELS[u.role]}</TableCell>
+              <TableCell>
+                <Badge tone={u.accessStatus === 'ACTIVE' ? 'green' : u.accessStatus === 'PENDING' ? 'amber' : 'red'}>
+                  {u.accessStatus === 'PENDING' ? 'Convite pendente' : u.accessStatus}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+          {(data ?? []).length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="py-8 text-center text-muted">
+                Nenhum funcionário cadastrado.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 }

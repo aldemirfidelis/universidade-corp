@@ -8,7 +8,9 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('uc_token')?.value;
 
   if (pathname === '/') {
-    return NextResponse.redirect(new URL(token ? '/inicio' : '/login', request.url));
+    // Visitante vê a landing comercial; usuário logado vai direto para o app.
+    if (token) return NextResponse.redirect(new URL('/inicio', request.url));
+    return NextResponse.next();
   }
 
   if (!isPublic && !token) {

@@ -51,6 +51,12 @@ export const companySettingsSchema = z.object({
   coverUrl: z.string().optional().nullable(),
   primaryColor: z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Cor inválida').optional(),
   secondaryColor: z.string().regex(/^#([0-9a-fA-F]{6})$/, 'Cor inválida').optional(),
+  // Conteúdo white-label da Academia.
+  heroTitle: z.string().max(200).optional().nullable(),
+  aboutText: z.string().max(2000).optional().nullable(),
+  missionText: z.string().max(2000).optional().nullable(),
+  visionText: z.string().max(2000).optional().nullable(),
+  guidelines: z.array(z.string().min(1)).max(30).optional(),
   requireExamByDefault: z.boolean().optional(),
   defaultPassingScore: z.coerce.number().min(0).max(100).optional(),
   defaultAttempts: z.coerce.number().int().min(1).optional(),
@@ -121,8 +127,22 @@ export const createLessonSchema = z.object({
   order: z.coerce.number().int().min(0).default(0),
   mandatory: z.boolean().default(true),
   contentText: z.string().optional().nullable(),
+  externalUrl: z.string().url('URL inválida').optional().nullable(),
 });
 export type CreateLessonInput = z.infer<typeof createLessonSchema>;
+
+// ============ Learning Paths / Trilhas ============
+export const learningPathSchema = z.object({
+  title: z.string().min(2, 'Informe o título da trilha'),
+  description: z.string().optional().nullable(),
+  mandatory: z.boolean().optional(),
+});
+export type LearningPathInput = z.infer<typeof learningPathSchema>;
+
+export const learningPathCoursesSchema = z.object({
+  courseIds: z.array(z.string()).default([]),
+});
+export type LearningPathCoursesInput = z.infer<typeof learningPathCoursesSchema>;
 
 // ============ Progresso ============
 export const lessonProgressSchema = z.object({

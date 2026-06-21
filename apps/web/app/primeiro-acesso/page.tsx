@@ -39,9 +39,9 @@ function FirstAccessForm() {
     <Card className="w-full max-w-md">
       <CardContent className="p-8">
         <h1 className="mb-1 text-2xl font-bold">Crie sua senha</h1>
-        <p className="mb-6 text-sm text-slate-500">Defina uma senha para o seu primeiro acesso.</p>
+        <p className="mb-6 text-sm text-muted">Defina uma senha para o seu primeiro acesso.</p>
         {!token ? (
-          <p className="text-sm text-red-600">Link inválido. Solicite um novo convite ao RH.</p>
+          <p className="text-sm text-danger">Link inválido. Solicite um novo convite ao RH.</p>
         ) : (
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
@@ -52,7 +52,7 @@ function FirstAccessForm() {
               <Label>Confirme a senha</Label>
               <Input type="password" value={confirmPassword} onChange={(e) => setConfirm(e.target.value)} required />
             </div>
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+            <Button type="submit" size="lg" className="w-full" loading={loading}>
               {loading ? 'Salvando...' : 'Criar senha e entrar'}
             </Button>
           </form>
@@ -64,8 +64,8 @@ function FirstAccessForm() {
 
 export default function FirstAccessPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
-      <Suspense fallback={<div>Carregando...</div>}>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Suspense fallback={<div className="text-muted">Carregando...</div>}>
         <FirstAccessForm />
       </Suspense>
     </div>

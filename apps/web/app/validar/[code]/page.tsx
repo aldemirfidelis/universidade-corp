@@ -27,15 +27,15 @@ export default function ValidarPage({ params }: { params: Promise<{ code: string
   });
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-lg">
         <CardContent className="p-8">
-          <div className="mb-6 flex items-center gap-2 text-slate-500">
+          <div className="mb-6 flex items-center gap-2 text-muted">
             <GraduationCap size={20} /> <span className="font-semibold">Validação de Certificado</span>
           </div>
 
           {isLoading ? (
-            <p className="text-slate-500">Verificando...</p>
+            <p className="text-muted">Verificando...</p>
           ) : data?.valid ? (
             <div>
               <div className="mb-4 flex items-center gap-2 text-emerald-600">
@@ -56,7 +56,7 @@ export default function ValidarPage({ params }: { params: Promise<{ code: string
               </dl>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-red-600">
+            <div className="flex items-center gap-2 text-danger">
               <ShieldX size={28} />
               <span className="text-lg font-bold">Certificado não encontrado ou inválido</span>
             </div>
@@ -69,8 +69,8 @@ export default function ValidarPage({ params }: { params: Promise<{ code: string
 
 function Row({ label, value, mono }: { label: string; value?: string; mono?: boolean }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-slate-100 py-1.5">
-      <dt className="text-slate-500">{label}</dt>
+    <div className="flex justify-between gap-4 border-b border-line py-1.5">
+      <dt className="text-muted">{label}</dt>
       <dd className={mono ? 'font-mono' : 'font-medium'}>{value ?? '—'}</dd>
     </div>
   );

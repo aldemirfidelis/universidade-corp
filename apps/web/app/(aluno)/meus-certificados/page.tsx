@@ -8,6 +8,8 @@ import { getToken } from '@/lib/auth';
 import { Certificate } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/misc';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 
 export default function MeusCertificadosPage() {
   const { data } = useQuery({
@@ -19,29 +21,30 @@ export default function MeusCertificadosPage() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Meus Certificados</h1>
+      <PageHeader title="Meus Certificados" subtitle="Baixe e compartilhe seus certificados." icon={<Award size={20} />} />
 
       {certs.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 p-10 text-center text-slate-500">
-            <Award size={40} className="text-slate-300" />
-            <p>Você ainda não possui certificados. Conclua um treinamento para liberá-los.</p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={<Award size={22} />}
+          title="Você ainda não possui certificados"
+          description="Conclua um treinamento para liberar seu primeiro certificado."
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {certs.map((c) => (
-            <Card key={c.id}>
+            <Card key={c.id} interactive>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
-                  <Award className="text-brand" />
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                    <Award size={22} />
+                  </span>
                   <Badge tone={c.status === 'VALID' ? 'green' : 'red'}>{c.status}</Badge>
                 </div>
                 <h2 className="mt-3 font-semibold">{c.course.title}</h2>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-muted">
                   Código: <span className="font-mono">{c.code}</span>
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted">
                   Emitido em {format(new Date(c.issuedAt), 'dd/MM/yyyy')}
                   {c.workloadHours ? ` · ${c.workloadHours}h` : ''}
                 </p>

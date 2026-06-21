@@ -18,6 +18,11 @@ export class DashboardController {
     return this.service.companyOverview(effectiveCompanyId(user));
   }
 
+  @Get('analytics')
+  analytics(@CurrentUser() user: AuthPayload) {
+    return this.service.analytics(effectiveCompanyId(user));
+  }
+
   @Get('team')
   team(@CurrentUser() user: AuthPayload) {
     return this.service.teamOverview(effectiveCompanyId(user), user.sub);

@@ -9,12 +9,14 @@ import {
 } from '@uc/shared';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CompletionService } from '../completion/completion.service';
+import { GamificationService } from '../gamification/gamification.service';
 
 @Injectable()
 export class AssessmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly completion: CompletionService,
+    private readonly gamification: GamificationService,
   ) {}
 
   // ---------------- Autoria (admin/instrutor) ----------------
@@ -194,6 +196,11 @@ export class AssessmentsService {
 
     let certificateIssued = false;
     if (passed) {
+      try {
+        await this.gamification.awardExamPassed(companyId, userId, attempt.assessment.courseId, score);
+      } catch {
+        /* gamificação é best-effort */
+      }
       await this.completion.completeCourse(companyId, userId, attempt.assessment.courseId);
       certificateIssued = true;
     } else {
